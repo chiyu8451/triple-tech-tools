@@ -359,7 +359,8 @@
   // --- 5. 借支歷史 ---
   function loadAdvanceHistory() {
     const list = document.getElementById('advanceList');
-    callApi({ action: "getAdvanceHistory" }, (res) => {
+    const userId = document.getElementById('userId').value;
+    callApi({ action: "getAdvanceHistory", userId: userId }, (res) => {
       list.innerHTML = "";
       if (!res.data || res.data.length === 0) { list.innerHTML = '<li class="list-group-item text-center text-muted">無資料</li>'; return; }
       
@@ -445,3 +446,4 @@
 </script>
 </body>
 </html>
+
