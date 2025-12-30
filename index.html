@@ -23,7 +23,7 @@
     <div id="loading-text" class="mt-3 text-muted">系統連線中...</div>
   </div>
 
-  <div class="container" id="main-app" class="hidden">
+  <div class="container hidden" id="main-app">
     <h4 class="mb-4 text-center" id="companyTitle">載入中...</h4>
     
     <form id="workForm" onsubmit="handleSubmit(event)">
@@ -70,7 +70,7 @@
       <button type="submit" id="submitBtn" class="btn btn-primary w-100 btn-lg">送出紀錄</button>
     </form>
 
-<hr class="my-4">
+    <hr class="my-4">
 
     <div class="card">
       <div class="card-header d-flex justify-content-between align-items-center">
@@ -93,17 +93,14 @@
       </div>
     </div>
     
-    <div class="mt-3 text-center"> ... </div>
-    
     <div class="mt-3 text-center">
-      <small class="text-muted" id="version-tag">Ver: GitHub Pro Edition</small>
+      <small class="text-muted" id="version-tag">Ver: GitHub Pro Edition 2.0</small>
     </div>
   </div>
 
 <script>
   // ================= 設定區 (請修改這裡) =================
   const LIFF_ID = "2008802133-cGpq8Rq1"; // 你的 LIFF ID
-  // 👇 把你剛剛在 GAS 部署拿到的網址貼在這裡
   const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxdi4l3oJCOCjIt7IsVphGhMGeE57NrZKeAzKIfavHvM2Hlb3fvNxra7bmy_Isn4F5SKA/exec"; 
   // ======================================================
 
@@ -118,15 +115,11 @@
         if (liff.isLoggedIn()) {
           getUserProfile();
         } else {
-          // 未登入，直接跳轉 LINE 登入畫面
-          // 因為現在是 GitHub Pages 固定網址，redirectUri 不設也沒關係，它會自己回來
           liff.login();
         }
       })
       .catch(err => {
         alert("LIFF 初始化失敗: " + err);
-        // 開發時方便除錯，如果 LIFF 壞了可以用測試 ID
-        // fetchInitData("Uada807809f80f9f961928ba8ee616953"); 
       });
   }
 
@@ -134,29 +127,25 @@
     liff.getProfile().then(profile => {
       document.getElementById('userId').value = profile.userId;
       fetchInitData(profile.userId);
-      loadReport();//新增這一行：一進來就載入報表
+      loadReport(); // 🔥 一進來就載入報表
     }).catch(err => {
       alert("讀取 User 資料失敗: " + err);
     });
   }
 
-  // 🔥 核心技術：用 fetch 呼叫 GAS API
   function fetchInitData(userId) {
     updateLoading("讀取雲端資料庫...");
     
     const payload = {
-      action: "getInitData", // 告訴後端我要做什麼
+      action: "getInitData",
       userId: userId
     };
 
-    // 使用 POST 發送，避免網址長度限制，且內容放 body
     fetch(GAS_API_URL, {
       method: "POST",
       body: JSON.stringify(payload)
-      // 注意：這裡不設 'Content-Type': 'application/json' 
-      // 而是用預設 text/plain 傳送，這是為了避開 GAS 的 CORS 預檢請求 (Preflight)
     })
-    .then(response => response.json()) // 把回傳的文字轉成 JSON 物件
+    .then(response => response.json())
     .then(res => {
       if (res.status === "success") {
         document.getElementById('companyTitle').innerText = res.company;
@@ -205,7 +194,8 @@
       
       if (res.status === "success") {
         alert("✅ 成功寫入！");
-        liff.closeWindow();
+        // 寫入成功後，自動刷新報表
+        loadReport();
       } else {
         alert("❌ 寫入失敗: " + res.message);
       }
@@ -236,9 +226,10 @@
     document.getElementById('loading').classList.add('hidden');
     document.getElementById('main-app').classList.remove('hidden');
   }
-</script>
 
-// 取得當前月份字串 (YYYY-MM)
+  // --- 報表相關功能 (修正後已放入 script 內) ---
+
+  // 取得當前月份字串 (YYYY-MM)
   function getCurrentMonth() {
     const d = new Date();
     return d.getFullYear() + "-" + ("0" + (d.getMonth() + 1)).slice(-2);
@@ -250,7 +241,6 @@
     const currentMonth = getCurrentMonth();
     document.getElementById('reportMonth').innerText = currentMonth;
     
-    // 更新 UI 狀態
     document.getElementById('reportBody').innerHTML = '<tr><td colspan="3" class="text-center text-muted py-3">更新數據中...</td></tr>';
 
     const payload = {
@@ -280,7 +270,7 @@
   // 把資料畫在表格上
   function renderReport(data) {
     const tbody = document.getElementById('reportBody');
-    tbody.innerHTML = ""; // 清空
+    tbody.innerHTML = ""; 
 
     if (data.length === 0) {
       tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted py-3">本月尚無紀錄</td></tr>';
@@ -297,6 +287,6 @@
       tbody.appendChild(tr);
     });
   }
-
+</script>
 </body>
 </html>
