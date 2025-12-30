@@ -94,13 +94,14 @@
     </div>
     
     <div class="mt-3 text-center">
-      <small class="text-muted" id="version-tag">Ver: GitHub Pro Edition 2.0</small>
+      <small class="text-muted" id="version-tag">Ver: GitHub Pro v3.0 (Fixed)</small>
     </div>
   </div>
 
 <script>
   // ================= 設定區 (請修改這裡) =================
-  const LIFF_ID = "2008802133-cGpq8Rq1"; // 你的 LIFF ID
+  const LIFF_ID = "2008802133-cGpq8Rq1"; 
+  // 👇 請確認下面這串網址是你最新的 GAS API 網址
   const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxdi4l3oJCOCjIt7IsVphGhMGeE57NrZKeAzKIfavHvM2Hlb3fvNxra7bmy_Isn4F5SKA/exec"; 
   // ======================================================
 
@@ -130,6 +131,69 @@
       loadReport(); // 🔥 一進來就載入報表
     }).catch(err => {
       alert("讀取 User 資料失敗: " + err);
+    });
+  }
+
+  // --- 報表相關功能 (全部包在 script 裡面了) ---
+
+  // 取得當前月份字串 (YYYY-MM)
+  function getCurrentMonth() {
+    const d = new Date();
+    return d.getFullYear() + "-" + ("0" + (d.getMonth() + 1)).slice(-2);
+  }
+
+  // 呼叫後端取得報表
+  function loadReport() {
+    const userId = document.getElementById('userId').value;
+    const currentMonth = getCurrentMonth();
+    document.getElementById('reportMonth').innerText = currentMonth;
+    
+    document.getElementById('reportBody').innerHTML = '<tr><td colspan="3" class="text-center text-muted py-3">更新數據中...</td></tr>';
+
+    const payload = {
+      action: "getMonthlyReport",
+      userId: userId,
+      month: currentMonth
+    };
+
+    fetch(GAS_API_URL, {
+      method: "POST",
+      body: JSON.stringify(payload)
+    })
+    .then(res => res.json())
+    .then(res => {
+      if (res.status === "success") {
+        renderReport(res.data);
+      } else {
+        // 如果後端回傳錯誤，通常是 action 沒對應到，代表 GAS 沒更新到最新版
+        console.error(res.message);
+        document.getElementById('reportBody').innerHTML = '<tr><td colspan="3" class="text-center text-danger">讀取失敗：請檢查後端部署</td></tr>';
+      }
+    })
+    .catch(err => {
+      console.error(err);
+      document.getElementById('reportBody').innerHTML = '<tr><td colspan="3" class="text-center text-danger">連線失敗</td></tr>';
+    });
+  }
+
+  // 把資料畫在表格上
+  function renderReport(data) {
+    const tbody = document.getElementById('reportBody');
+    tbody.innerHTML = ""; 
+
+    if (!data || data.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted py-3">本月尚無紀錄</td></tr>';
+      return;
+    }
+
+    data.forEach(item => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td class="fw-bold">${item.name}</td>
+        <td class="text-center">${item.days}</td>
+        <td class="text-center">${item.ot}</td>
+      `;
+      tbody.appendChild(tr);
     });
   }
 
@@ -194,8 +258,7 @@
       
       if (res.status === "success") {
         alert("✅ 成功寫入！");
-        // 寫入成功後，自動刷新報表
-        loadReport();
+        loadReport(); // 成功後自動刷新報表
       } else {
         alert("❌ 寫入失敗: " + res.message);
       }
@@ -225,67 +288,6 @@
   function hideLoading() {
     document.getElementById('loading').classList.add('hidden');
     document.getElementById('main-app').classList.remove('hidden');
-  }
-
-  // --- 報表相關功能 (修正後已放入 script 內) ---
-
-  // 取得當前月份字串 (YYYY-MM)
-  function getCurrentMonth() {
-    const d = new Date();
-    return d.getFullYear() + "-" + ("0" + (d.getMonth() + 1)).slice(-2);
-  }
-
-  // 呼叫後端取得報表
-  function loadReport() {
-    const userId = document.getElementById('userId').value;
-    const currentMonth = getCurrentMonth();
-    document.getElementById('reportMonth').innerText = currentMonth;
-    
-    document.getElementById('reportBody').innerHTML = '<tr><td colspan="3" class="text-center text-muted py-3">更新數據中...</td></tr>';
-
-    const payload = {
-      action: "getMonthlyReport",
-      userId: userId,
-      month: currentMonth
-    };
-
-    fetch(GAS_API_URL, {
-      method: "POST",
-      body: JSON.stringify(payload)
-    })
-    .then(res => res.json())
-    .then(res => {
-      if (res.status === "success") {
-        renderReport(res.data);
-      } else {
-        alert("讀取報表失敗: " + res.message);
-      }
-    })
-    .catch(err => {
-      console.error(err);
-      document.getElementById('reportBody').innerHTML = '<tr><td colspan="3" class="text-center text-danger">連線失敗</td></tr>';
-    });
-  }
-
-  // 把資料畫在表格上
-  function renderReport(data) {
-    const tbody = document.getElementById('reportBody');
-    tbody.innerHTML = ""; 
-
-    if (data.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted py-3">本月尚無紀錄</td></tr>';
-      return;
-    }
-
-    data.forEach(item => {
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td class="fw-bold">${item.name}</td>
-        <td class="text-center">${item.days}</td>
-        <td class="text-center">${item.ot}</td>
-      `;
-      tbody.appendChild(tr);
-    });
   }
 </script>
 </body>
