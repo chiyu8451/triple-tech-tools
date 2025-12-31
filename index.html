@@ -299,16 +299,40 @@
     }
   }
 
-  // --- 1. 初始化 ---
+// --- 1. 初始化 (含快取優化) ---
   function fetchInitData(userId) {
+    // 1. 先試著從手機讀快取
+    const cachedData = localStorage.getItem('initData_' + userId);
+    if (cachedData) {
+      const data = JSON.parse(cachedData);
+      // 如果有快取，直接渲染畫面，不顯示 Loading
+      renderInitData(data);
+      console.log("使用快取資料秒開");
+      
+      // 但還是要在背景偷偷更新，以免資料舊了
+      callApi({ action: "getInitData", userId: userId }, (res) => {
+        localStorage.setItem('initData_' + userId, JSON.stringify(res));
+        // 這裡可以選擇要不要這時候更新選單，或者下次進來再更
+        console.log("背景更新完成");
+      });
+      return; 
+    }
+
+    // 2. 如果沒快取，才乖乖跑 Loading
     callApi({ action: "getInitData", userId: userId }, (res) => {
-      document.getElementById('companyTitle').innerText = res.company;
-      updateSelect('site', res.sites);
-      updateSelect('worker', res.workers);
-      updateSelect('advWorker', res.workers);
-      document.getElementById('loading').classList.add('hidden');
-      document.getElementById('main-app').classList.remove('hidden');
+      localStorage.setItem('initData_' + userId, JSON.stringify(res));
+      renderInitData(res);
     });
+  }
+
+  // 抽出來的渲染函式
+  function renderInitData(res) {
+    document.getElementById('companyTitle').innerText = res.company;
+    updateSelect('site', res.sites);
+    updateSelect('worker', res.workers);
+    updateSelect('advWorker', res.workers);
+    document.getElementById('loading').classList.add('hidden');
+    document.getElementById('main-app').classList.remove('hidden');
   }
 
   // --- 2. 送出點工 ---
@@ -493,4 +517,5 @@
 </script>
 </body>
 </html>
+
 
