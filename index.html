@@ -14,6 +14,8 @@
       --bg-beige: #fdfbf7;        /* 米白：紙張感 */
       --text-grey: #585858;       /* 深灰：內文 */
       --border-color: #e0e0e0;
+      --type-debt: #dc3545;       /* 紅色：借支 */
+      --type-claim: #198754;      /* 綠色：請款 */
     }
 
     body { 
@@ -50,7 +52,6 @@
       background: transparent;
       border-bottom: 4px solid var(--accent-orange);
     }
-    .nav-link:hover { border-color: transparent; }
 
     /* 卡片樣式 */
     .card { 
@@ -67,26 +68,17 @@
       color: var(--primary-navy);
     }
 
-    /* 按鈕優化 */
-    .btn-primary {
-      background-color: var(--primary-navy);
-      border-color: var(--primary-navy);
+    /* 自定義 Radio 按鈕 (借支 vs 請款) */
+    .btn-check:checked + .btn-outline-danger {
+      background-color: var(--type-debt); color: white;
     }
-    .btn-orange {
-      background-color: var(--accent-orange);
-      border-color: var(--accent-orange);
-      color: white;
-    }
-    .btn-orange:hover, .btn-orange:active {
-      background-color: #b34500;
-      color: white;
+    .btn-check:checked + .btn-outline-success {
+      background-color: var(--type-claim); color: white;
     }
 
     /* 報表數字 */
     .money-text { font-family: 'Consolas', monospace; font-weight: bold; }
-    .text-plus { color: #198754; } /* 綠色：收入 */
-    .text-minus { color: #dc3545; } /* 紅色：支出 */
-
+    
     .loading-overlay {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
       background: rgba(44, 62, 80, 0.95); z-index: 9999;
@@ -108,7 +100,7 @@
     <div class="nav-header d-flex justify-content-between align-items-center">
       <div>
         <h5 class="mb-0 fw-bold" id="companyTitle">載入中...</h5>
-        <small style="opacity: 0.8">老闆控盤中心 V4.0</small>
+        <small style="opacity: 0.8">天紀企業社 - 管理後台</small>
       </div>
       <input type="hidden" id="userId">
     </div>
@@ -118,7 +110,7 @@
         <button class="nav-link active" id="work-tab" data-bs-toggle="tab" data-bs-target="#work-pane" type="button">📝 點工回報</button>
       </li>
       <li class="nav-item" role="presentation">
-        <button class="nav-link" id="advance-tab" data-bs-toggle="tab" data-bs-target="#advance-pane" type="button">💸 借支管理</button>
+        <button class="nav-link" id="advance-tab" data-bs-toggle="tab" data-bs-target="#advance-pane" type="button">💸 帳務管理</button>
       </li>
     </ul>
 
@@ -153,10 +145,10 @@
               </div>
             </div>
             <div class="mb-3">
-              <label class="form-label fw-bold text-secondary">加班 (A / B)</label>
+              <label class="form-label fw-bold text-secondary">加班 (A 1.66 / B 2.0)</label>
               <div class="input-group">
-                <input type="number" class="form-control" id="otA" placeholder="A平日">
-                <input type="number" class="form-control" id="otB" placeholder="B假日">
+                <input type="number" class="form-control" id="otA" placeholder="A 平日">
+                <input type="number" class="form-control" id="otB" placeholder="B 假日">
               </div>
             </div>
             <button type="submit" id="btnWork" class="btn btn-primary w-100 py-2 fw-bold shadow-sm">送出點工</button>
@@ -174,41 +166,55 @@
 
       <div class="tab-pane fade" id="advance-pane" role="tabpanel">
         
-        <div class="card p-3 border-danger" style="border-left: 4px solid #dc3545;">
-          <h6 class="text-danger fw-bold mb-3">💰 新增預支紀錄</h6>
+        <div class="card p-3" style="border-top: 4px solid #6c757d;">
+          <h6 class="fw-bold mb-3 text-secondary">💰 新增帳務紀錄</h6>
+          
           <form onsubmit="handleSubmitAdvance(event)">
+            <div class="btn-group w-100 mb-3" role="group">
+              <input type="radio" class="btn-check" name="advType" id="typeDebt" value="debt" checked onchange="updateAdvHint()">
+              <label class="btn btn-outline-danger" for="typeDebt">🔴 預支 (扣錢)</label>
+
+              <input type="radio" class="btn-check" name="advType" id="typeClaim" value="claim" onchange="updateAdvHint()">
+              <label class="btn btn-outline-success" for="typeClaim">🟢 請款 (給錢)</label>
+            </div>
+
             <div class="mb-3">
               <label class="form-label fw-bold text-secondary">日期</label>
               <input type="date" class="form-control" id="advDate" required>
             </div>
-            <div class="row g-2">
-              <div class="col-7 mb-3">
-                <label class="form-label fw-bold text-secondary">師傅</label>
-                <select class="form-select" id="advWorker" required><option value="" disabled selected>...</option></select>
-              </div>
-              <div class="col-5 mb-3">
-                <label class="form-label fw-bold text-secondary">金額</label>
-                <input type="number" class="form-control" id="advAmount" placeholder="$" required>
-              </div>
+            
+            <div class="mb-3">
+              <label class="form-label fw-bold text-secondary">師傅</label>
+              <select class="form-select" id="advWorker" required><option value="" disabled selected>...</option></select>
             </div>
+
+            <div class="mb-3">
+              <label class="form-label fw-bold text-secondary">金額</label>
+              <input type="number" class="form-control" id="advAmount" placeholder="$" required>
+              <div id="advHint" class="form-text text-danger mt-1">此金額將從薪水中扣除</div>
+            </div>
+
             <div class="mb-3">
               <label class="form-label fw-bold text-secondary">備註 (用途)</label>
-              <input type="text" class="form-control" id="advNote" placeholder="例如：修車、生活費">
+              <input type="text" class="form-control" id="advNote" placeholder="例如：生活費、買涼水...">
             </div>
-            <button type="submit" id="btnAdv" class="btn btn-orange w-100 py-2 fw-bold shadow-sm">確認借支</button>
+            
+            <button type="submit" id="btnAdv" class="btn btn-secondary w-100 py-2 fw-bold shadow-sm">確認送出</button>
           </form>
         </div>
 
         <div class="card">
           <div class="card-header d-flex justify-content-between">
-            <span>最近借支</span>
+            <span>最近帳務</span>
             <button class="btn btn-sm btn-link text-decoration-none p-0" onclick="loadAdvanceHistory()">🔄</button>
           </div>
           <ul class="list-group list-group-flush" id="advanceList"></ul>
         </div>
       </div>
 
-    </div> <div class="container pb-3">
+    </div> 
+
+    <div class="container pb-3">
       <div class="card border-0 shadow-sm mt-2">
         <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
           <span>📊 本月報酬結算 (<span id="reportMonth"></span>)</span>
@@ -229,7 +235,7 @@
 <script>
   // ================= 設定區 =================
   const LIFF_ID = "2008802133-cGpq8Rq1"; 
-  // 👇 更新你的 GAS API 網址
+  // 👇 你的 GAS 網址
   const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxdi4l3oJCOCjIt7IsVphGhMGeE57NrZKeAzKIfavHvM2Hlb3fvNxra7bmy_Isn4F5SKA/exec"; 
   // =========================================
 
@@ -238,6 +244,7 @@
     document.getElementById('date').valueAsDate = today;
     document.getElementById('advDate').valueAsDate = today;
     initLiff();
+    updateAdvHint(); // 初始化提示文字
   };
 
   function initLiff() {
@@ -263,7 +270,6 @@
     loadReport();
   }
 
-  // --- API 核心 ---
   function callApi(payload, onSuccess) {
     fetch(GAS_API_URL, { method: "POST", body: JSON.stringify(payload) })
     .then(res => res.json())
@@ -274,13 +280,32 @@
     .catch(err => alert("❌ 連線失敗"));
   }
 
+  // --- UI 互動: 更新借支提示 ---
+  function updateAdvHint() {
+    const isDebt = document.getElementById('typeDebt').checked;
+    const hint = document.getElementById('advHint');
+    const btn = document.getElementById('btnAdv');
+    
+    if (isDebt) {
+      hint.innerText = "此金額將從薪水中扣除 (記為借支)";
+      hint.className = "form-text text-danger mt-1";
+      btn.className = "btn btn-danger w-100 py-2 fw-bold shadow-sm";
+      btn.innerText = "確認扣款 (預支)";
+    } else {
+      hint.innerText = "此金額將補貼給師傅 (記為請款)";
+      hint.className = "form-text text-success mt-1";
+      btn.className = "btn btn-success w-100 py-2 fw-bold shadow-sm";
+      btn.innerText = "確認給付 (請款)";
+    }
+  }
+
   // --- 1. 初始化 ---
   function fetchInitData(userId) {
     callApi({ action: "getInitData", userId: userId }, (res) => {
       document.getElementById('companyTitle').innerText = res.company;
       updateSelect('site', res.sites);
       updateSelect('worker', res.workers);
-      updateSelect('advWorker', res.workers); // 借支頁面也要更新
+      updateSelect('advWorker', res.workers);
       document.getElementById('loading').classList.add('hidden');
       document.getElementById('main-app').classList.remove('hidden');
     });
@@ -310,24 +335,38 @@
     });
   }
 
-  // --- 3. 送出借支 ---
+  // --- 3. 送出帳務 (借支/請款) ---
   function handleSubmitAdvance(e) {
     e.preventDefault();
     const btn = document.getElementById('btnAdv');
     btn.disabled = true; btn.innerText = "寫入中...";
 
+    const isDebt = document.getElementById('typeDebt').checked;
+    let amount = Number(document.getElementById('advAmount').value);
+    
+    // 🔥 關鍵邏輯：如果是請款，金額自動轉負數 (代表負負得正，加錢)
+    // 雖然直覺上請款是加錢，但因為我們系統是 "Advances(扣項)"，所以要存負值來讓總和變少(負負得正)
+    // 等等，讓我們檢查一下後端邏輯：
+    // getMonthSummary: netPay = grossPay - advances
+    // 如果 advances 是正數 (借支 1000) -> 薪水 - 1000 (正確)
+    // 如果 advances 是負數 (請款 -100) -> 薪水 - (-100) = 薪水 + 100 (正確)
+    if (!isDebt) {
+      amount = -amount;
+    }
+
     const formData = {
       userId: document.getElementById('userId').value,
       worker: document.getElementById('advWorker').value,
       date: document.getElementById('advDate').value,
-      amount: document.getElementById('advAmount').value,
+      amount: amount, 
       note: document.getElementById('advNote').value
     };
 
     callApi({ action: "submitAdvance", formData: formData }, (res) => {
-      alert("💰 借支已紀錄");
-      btn.disabled = false; btn.innerText = "確認借支";
-      document.getElementById('advAmount').value = ""; // 清空金額
+      alert(isDebt ? "💰 預支已紀錄" : "💵 請款已紀錄");
+      btn.disabled = false; 
+      updateAdvHint(); // 重置按鈕文字
+      document.getElementById('advAmount').value = "";
       document.getElementById('advNote').value = "";
       refreshAll();
     });
@@ -357,7 +396,7 @@
     });
   }
 
-  // --- 5. 借支歷史 ---
+  // --- 5. 帳務歷史 ---
   function loadAdvanceHistory() {
     const list = document.getElementById('advanceList');
     const userId = document.getElementById('userId').value;
@@ -366,15 +405,19 @@
       if (!res.data || res.data.length === 0) { list.innerHTML = '<li class="list-group-item text-center text-muted">無資料</li>'; return; }
       
       res.data.forEach(item => {
+        // 判斷顏色：正數(扣款)顯示紅，負數(給錢)顯示綠
+        let colorClass = item.amount > 0 ? "text-danger" : "text-success";
+        let displayAmount = item.amount > 0 ? `-$${fmt(item.amount)}` : `+$${fmt(Math.abs(item.amount))}`;
+        
         list.innerHTML += `
           <li class="list-group-item d-flex justify-content-between align-items-center">
             <div>
               <span class="badge bg-secondary me-1">${item.date}</span>
-              <span class="fw-bold text-danger">${item.worker}</span>
+              <span class="fw-bold ${colorClass}">${item.worker}</span>
               <small class="text-muted d-block">${item.note}</small>
             </div>
             <div class="text-end">
-              <span class="text-danger fw-bold money-text">-$${fmt(item.amount)}</span>
+              <span class="${colorClass} fw-bold money-text">${displayAmount}</span>
               <button class="btn btn-sm btn-outline-danger ms-2" onclick="deleteItem('deleteAdvance', ${item.rowIndex})">×</button>
             </div>
           </li>`;
@@ -391,7 +434,7 @@
     });
   }
 
-  // --- 7. 超級報表渲染 ---
+  // --- 7. 超級報表 ---
   function loadReport() {
     const userId = document.getElementById('userId').value;
     const currentMonth = new Date().toISOString().slice(0, 7);
@@ -403,11 +446,15 @@
       if (!res.data || res.data.length === 0) { container.innerHTML = '<div class="p-3 text-center text-muted">本月尚無資料</div>'; return; }
 
       res.data.forEach((w, index) => {
-        // 產生工地分類字串
         let siteStr = Object.entries(w.sites).map(([site, days]) => `${site}: ${days}天`).join(' / ');
         if(!siteStr) siteStr = "無點工紀錄";
 
-        // 產生手風琴卡片
+        // 判斷借支顯示文字：如果有負數(請款)，顯示綠色加號；正數(借支)顯示紅色減號
+        let advDisplay = "";
+        if (w.advances > 0) advDisplay = `<span class="text-danger">-$${fmt(w.advances)}</span>`;
+        else if (w.advances < 0) advDisplay = `<span class="text-success">+$${fmt(Math.abs(w.advances))}</span>`;
+        else advDisplay = `<span>$0</span>`;
+
         const html = `
           <div class="accordion-item">
             <h2 class="accordion-header" id="heading${index}">
@@ -424,8 +471,8 @@
                   <li class="mb-2"><strong>🏗️ 工地分佈：</strong><br>${siteStr}</li>
                   <li class="d-flex justify-content-between"><span>正常工數：</span><span>${w.totalDays} 工</span></li>
                   <li class="d-flex justify-content-between"><span>加班時數：</span><span>A:${w.totalOtA} / B:${w.totalOtB}</span></li>
-                  <li class="d-flex justify-content-between text-success"><span>應付報酬：</span><span>+$${fmt(w.grossPay)}</span></li>
-                  <li class="d-flex justify-content-between text-danger border-bottom pb-2 mb-2"><span>借支扣款：</span><span>-$${fmt(w.advances)}</span></li>
+                  <li class="d-flex justify-content-between text-secondary"><span>應付報酬：</span><span>$${fmt(w.grossPay)}</span></li>
+                  <li class="d-flex justify-content-between border-bottom pb-2 mb-2"><span>帳務調整：</span>${advDisplay}</li>
                   <li class="d-flex justify-content-between fw-bold fs-5 text-dark"><span>實付金額：</span><span>$${fmt(w.netPay)}</span></li>
                 </ul>
               </div>
@@ -437,7 +484,6 @@
     });
   }
 
-  // Helper: 千分位
   function fmt(num) { return new Intl.NumberFormat('zh-TW').format(num); }
   function updateSelect(id, items) {
     const sel = document.getElementById(id);
@@ -447,5 +493,3 @@
 </script>
 </body>
 </html>
-
-
