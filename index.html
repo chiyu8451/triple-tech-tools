@@ -8,62 +8,57 @@
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <style>
-    /* === 專業工程風格 V5.0 (No Emoji) === */
+    /* === 易讀性優化 V5.5 === */
     :root {
       --primary-navy: #2c3e50;
       --accent-orange: #d35400;
       --bg-grey: #f4f6f8;
-      --text-dark: #333;
+      --text-dark: #222; /* 更深的黑色，增加對比 */
       --border-color: #ced4da;
     }
     body { 
       padding: 0; background-color: var(--bg-grey); 
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
-      padding-bottom: 80px; color: var(--text-dark);
+      padding-bottom: 80px; color: var(--text-dark); font-size: 16px; /* 基礎字體加大 */
     }
     .nav-header { background: var(--primary-navy); color: #fff; padding: 15px 20px; border-bottom: 3px solid var(--accent-orange); }
     .nav-tabs { border-bottom: 1px solid var(--border-color); background: #fff; }
-    .nav-link { color: #6c757d; font-weight: 600; border: none; padding: 15px 0; border-bottom: 3px solid transparent; }
-    .nav-link.active { color: var(--accent-orange); border-bottom: 3px solid var(--accent-orange); background: transparent; }
+    .nav-link { color: #666; font-weight: 600; border: none; padding: 15px 0; border-bottom: 4px solid transparent; font-size: 1.05rem; }
+    .nav-link.active { color: var(--accent-orange); border-bottom: 4px solid var(--accent-orange); background: transparent; }
     
-    .card { border: 1px solid #ddd; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 15px; background: #fff; }
-    .card-header { background-color: #f8f9fa; border-bottom: 1px solid #ddd; font-weight: bold; color: var(--primary-navy); padding: 10px 15px; }
+    .card { border: 1px solid #ddd; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.08); margin-bottom: 15px; background: #fff; }
+    .card-header { background-color: #f8f9fa; border-bottom: 1px solid #ddd; font-weight: bold; color: var(--primary-navy); padding: 12px 15px; font-size: 1.05rem; }
     
-    .form-label { font-weight: 600; font-size: 0.9rem; color: #495057; margin-bottom: 0.3rem; }
-    .form-control, .form-select { border-radius: 4px; border: 1px solid #ced4da; padding: 0.6rem; }
-    .form-text { font-size: 0.8rem; }
+    .form-label { font-weight: 700; font-size: 0.95rem; color: #333; margin-bottom: 0.4rem; }
+    .form-control, .form-select { border-radius: 4px; border: 1px solid #aaa; padding: 0.7rem; font-size: 1rem; } /* 輸入框加深加粗 */
+    .form-text { font-size: 0.85rem; color: #666; }
     
-    .btn { border-radius: 4px; font-weight: 600; }
+    .btn { border-radius: 4px; font-weight: 700; padding: 10px; font-size: 1.05rem; }
     .btn-primary { background-color: var(--primary-navy); border-color: var(--primary-navy); }
-    .btn-check:checked + .btn-outline-danger { background-color: #dc3545; color: white; }
-    .btn-check:checked + .btn-outline-success { background-color: #198754; color: white; }
     
-    .money-text { font-family: 'Arial', sans-serif; font-weight: bold; }
     .loading-overlay {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(44, 62, 80, 0.95); z-index: 9999;
+      background: rgba(44, 62, 80, 0.98); z-index: 9999;
       display: flex; flex-direction: column; align-items: center; justify-content: center; color: white;
     }
     .hidden { display: none !important; }
-    .swal2-popup { font-size: 0.9rem !important; border-radius: 4px !important; }
     
-    /* 列表優化 */
-    .list-group-item { border-left: none; border-right: none; padding: 12px 15px; }
-    .badge { font-weight: 500; border-radius: 2px; }
+    /* 列表優化 - 加大點擊區域 */
+    .list-group-item { border-left: none; border-right: none; padding: 15px; }
   </style>
 </head>
 <body>
 
   <div id="loading" class="loading-overlay">
-    <div class="spinner-border text-light" role="status"></div>
-    <div class="mt-3 fw-bold">系統載入中...</div>
+    <div class="spinner-border text-light" style="width: 3rem; height: 3rem;" role="status"></div>
+    <div class="mt-4 fs-4 fw-bold">系統載入中...</div>
   </div>
 
   <div class="hidden" id="main-app">
     <div class="nav-header d-flex justify-content-between align-items-center">
       <div>
         <h5 class="mb-0 fw-bold" id="companyTitle">...</h5>
-        <small style="opacity: 0.8">天紀企業社 管理後台</small>
+        <small style="opacity: 0.9">天紀企業社 管理系統</small>
       </div>
       <input type="hidden" id="userId">
     </div>
@@ -79,32 +74,31 @@
       <div class="tab-pane fade show active" id="work-pane">
         <div class="card p-3">
           <form onsubmit="handleSubmitWork(event)">
-            <div class="mb-3"><label class="form-label">日期</label><input type="date" class="form-control" id="date" required></div>
+            <div class="mb-3"><label class="form-label">📅 日期</label><input type="date" class="form-control" id="date" required></div>
             <div class="row g-2">
-              <div class="col-6 mb-3"><label class="form-label">工地</label><select class="form-select" id="site" required><option value="" disabled selected>請選擇</option></select></div>
-              <div class="col-6 mb-3"><label class="form-label">師傅</label><select class="form-select" id="worker" required><option value="" disabled selected>請選擇</option></select></div>
+              <div class="col-6 mb-3"><label class="form-label">🏗️ 工地</label><select class="form-select" id="site" required><option value="" disabled selected>請選擇工地</option></select></div>
+              <div class="col-6 mb-3"><label class="form-label">👷 師傅</label><select class="form-select" id="worker" required><option value="" disabled selected>請選擇師傅</option></select></div>
             </div>
             <div class="row g-2">
               <div class="col-6 mb-3"><label class="form-label">正常工數 (天)</label><input type="number" class="form-control" id="count" value="1" step="0.5"></div>
-              <div class="col-6 mb-3"><label class="form-label">便當數量 (個)</label><input type="number" class="form-control" id="bento" value="1"></div>
+              <div class="col-6 mb-3"><label class="form-label">便當數量 (個)</label><input type="number" class="form-control" id="bento" value="0"></div>
             </div>
             <div class="mb-3">
-              <label class="form-label">加班時數 (小時)</label>
+              <label class="form-label">加班時數 (請填小時)</label>
               <div class="input-group mb-2">
-                <span class="input-group-text bg-light">A時段</span>
+                <span class="input-group-text bg-light fw-bold">A時段 (1.66倍)</span>
                 <input type="number" class="form-control" id="otA" placeholder="18:00~22:00">
               </div>
               <div class="input-group">
-                <span class="input-group-text bg-light">B時段</span>
+                <span class="input-group-text bg-light fw-bold">B時段 (2.0倍)</span>
                 <input type="number" class="form-control" id="otB" placeholder="22:00~24:00">
               </div>
-              <div class="form-text text-muted">A時段: 1.66倍 / B時段: 2.0倍</div>
             </div>
-            <button type="submit" class="btn btn-primary w-100 py-2 shadow-sm">送出紀錄</button>
+            <button type="submit" class="btn btn-primary w-100 py-3 shadow-sm fs-5">送出紀錄</button>
           </form>
         </div>
         <div class="card">
-          <div class="card-header d-flex justify-content-between align-items-center"><span>今日紀錄</span><button class="btn btn-sm btn-outline-secondary" onclick="loadHistory()">刷新</button></div>
+          <div class="card-header d-flex justify-content-between align-items-center"><span>今日已登記</span><button class="btn btn-sm btn-outline-secondary" onclick="loadHistory()">刷新</button></div>
           <ul class="list-group list-group-flush" id="historyList"></ul>
         </div>
       </div>
@@ -115,19 +109,19 @@
           <form onsubmit="handleSubmitAdvance(event)">
             <div class="btn-group w-100 mb-3">
               <input type="radio" class="btn-check" name="advType" id="typeDebt" value="debt" checked onchange="updateAdvHint()">
-              <label class="btn btn-outline-danger" for="typeDebt">預支 (扣錢)</label>
+              <label class="btn btn-outline-danger py-2" for="typeDebt">預支 (扣錢)</label>
               <input type="radio" class="btn-check" name="advType" id="typeClaim" value="claim" onchange="updateAdvHint()">
-              <label class="btn btn-outline-success" for="typeClaim">請款 (給錢)</label>
+              <label class="btn btn-outline-success py-2" for="typeClaim">請款 (給錢)</label>
             </div>
             <div class="mb-3"><label class="form-label">日期</label><input type="date" class="form-control" id="advDate" required></div>
-            <div class="mb-3"><label class="form-label">師傅</label><select class="form-select" id="advWorker" required><option value="" disabled selected>請選擇</option></select></div>
+            <div class="mb-3"><label class="form-label">師傅</label><select class="form-select" id="advWorker" required><option value="" disabled selected>請選擇師傅</option></select></div>
             <div class="mb-3">
               <label class="form-label">金額</label>
-              <input type="number" class="form-control" id="advAmount" placeholder="$" required>
-              <div id="advHint" class="form-text text-danger mt-1">從本月薪資扣除</div>
+              <input type="number" class="form-control" id="advAmount" placeholder="輸入金額" required>
+              <div id="advHint" class="form-text text-danger mt-1 fw-bold">從本月薪資扣除</div>
             </div>
-            <div class="mb-3"><label class="form-label">備註</label><input type="text" class="form-control" id="advNote" placeholder="用途說明"></div>
-            <button type="submit" id="btnAdv" class="btn btn-secondary w-100 py-2 shadow-sm">確認送出</button>
+            <div class="mb-3"><label class="form-label">備註</label><input type="text" class="form-control" id="advNote" placeholder="例如：生活費..."></div>
+            <button type="submit" id="btnAdv" class="btn btn-secondary w-100 py-3 shadow-sm fs-5">確認送出</button>
           </form>
         </div>
         <div class="card">
@@ -139,31 +133,45 @@
       <div class="tab-pane fade" id="setting-pane">
         
         <div class="card p-3 mb-3">
-          <h6 class="fw-bold mb-3 text-dark">新增師傅資料</h6>
+          <h6 class="fw-bold mb-3 text-dark">➕ 新增師傅資料</h6>
           <form onsubmit="handleAddWorker(event)">
             <div class="row g-2">
-              <div class="col-7"><input type="text" class="form-control" id="newWorkerName" placeholder="姓名" required></div>
-              <div class="col-5"><input type="number" class="form-control" id="newWorkerSalary" placeholder="日薪" required></div>
+              <div class="col-7">
+                <label class="form-label small">姓名</label>
+                <input type="text" class="form-control" id="newWorkerName" required>
+              </div>
+              <div class="col-5">
+                <label class="form-label small">日薪</label>
+                <input type="number" class="form-control" id="newWorkerSalary" required>
+              </div>
             </div>
-            <button class="btn btn-dark w-100 mt-2" type="submit">新增師傅</button>
+            <button class="btn btn-dark w-100 mt-3" type="submit">新增師傅</button>
           </form>
         </div>
 
         <div class="card p-3">
-          <h6 class="fw-bold mb-3 text-dark">新增工地資料</h6>
+          <h6 class="fw-bold mb-3 text-dark">➕ 新增工地資料</h6>
           <form onsubmit="handleAddSite(event)">
-            <div class="mb-2"><input type="text" class="form-control" id="newSiteName" placeholder="工地名稱" required></div>
+            <div class="mb-2">
+              <label class="form-label small">工地名稱</label>
+              <input type="text" class="form-control" id="newSiteName" required>
+            </div>
+            
             <div class="row g-2 mb-2">
               <div class="col-6">
+                <label class="form-label small">是否供餐</label>
                 <select class="form-select" id="newSiteMeal">
-                  <option value="是">供餐：是</option>
-                  <option value="否">供餐：否</option>
+                  <option value="是">有供餐 (老闆出)</option>
+                  <option value="否">無供餐</option>
                 </select>
               </div>
               <div class="col-6">
-                <input type="number" class="form-control" id="newSitePrice" placeholder="單價" value="100">
+                <label class="form-label small">便當單價</label>
+                <input type="number" class="form-control" id="newSitePrice" placeholder="預設100">
               </div>
             </div>
+            <div class="form-text text-muted mb-2">若無供餐，單價可不填。</div>
+
             <button class="btn btn-dark w-100" type="submit">新增工地</button>
           </form>
         </div>
@@ -206,7 +214,6 @@
     document.getElementById('advDate').valueAsDate = today;
     const currentMonth = today.toISOString().slice(0, 7);
     document.getElementById('reportMonthPicker').value = currentMonth;
-    
     initLiff();
     updateAdvHint(); 
   };
@@ -228,7 +235,7 @@
   function refreshAll() { loadHistory(); loadAdvanceHistory(); loadReport(); }
 
   function callApi(payload, onSuccess, showLoading=false) {
-    if(showLoading) Swal.fire({ title: '處理中...', allowOutsideClick: false, didOpen: () => { Swal.showLoading() } });
+    if(showLoading) Swal.fire({ title: '處理中...', text: '請稍候，不要關閉視窗', allowOutsideClick: false, didOpen: () => { Swal.showLoading() } });
     fetch(GAS_API_URL, { method: "POST", body: JSON.stringify(payload) })
     .then(res => res.json())
     .then(res => {
@@ -238,7 +245,7 @@
     })
     .catch(err => {
       if(showLoading) Swal.close();
-      Swal.fire('連線失敗', '請檢查網路', 'error');
+      Swal.fire('連線失敗', '請檢查網路連線', 'error');
     });
   }
 
@@ -276,7 +283,7 @@
       otB: document.getElementById('otB').value
     };
     callApi({ action: "submitForm", formData: formData }, (res) => {
-      Swal.fire({icon: 'success', title: '點工已紀錄', timer: 1000, showConfirmButton: false});
+      Swal.fire({icon: 'success', title: '點工已紀錄', timer: 1500, showConfirmButton: false});
       refreshAll();
     }, true);
   }
@@ -296,14 +303,14 @@
       note: document.getElementById('advNote').value
     };
     callApi({ action: "submitAdvance", formData: formData }, (res) => {
-      Swal.fire({icon: 'success', title: '帳務已紀錄', timer: 1000, showConfirmButton: false});
+      Swal.fire({icon: 'success', title: '帳務已紀錄', timer: 1500, showConfirmButton: false});
       document.getElementById('advAmount').value = "";
       document.getElementById('advNote').value = "";
       refreshAll();
     }, true);
   }
 
-  // --- 刪除項目 (修正版：即時移除 DOM) ---
+  // --- 刪除項目 ---
   function deleteItem(action, rowIndex, elementId) {
     Swal.fire({
       title: '確定刪除？', icon: 'warning',
@@ -311,13 +318,12 @@
       customClass: { confirmButton: 'btn btn-danger', cancelButton: 'btn btn-secondary' }
     }).then((result) => {
       if (result.isConfirmed) {
-        // 1. UI 秒刪 (Optimistic UI) - 修正這裡
+        // UI 秒刪
         const row = document.getElementById(elementId);
-        if(row) row.remove(); // 直接從 DOM 移除，而不是隱藏
-
-        // 2. 後端呼叫
+        if(row) row.remove();
+        
         callApi({ action: action, userId: document.getElementById('userId').value, rowIndex: rowIndex }, (res) => {
-          loadReport(); // 只刷新報表金額
+          loadReport();
         }, false);
       }
     });
@@ -329,7 +335,6 @@
       list.innerHTML = "";
       if (!res.data || res.data.length === 0) { list.innerHTML = '<li class="list-group-item text-center text-muted">無資料</li>'; return; }
       res.data.forEach((item, idx) => {
-        // 確保 ID 唯一性
         const uniqueId = `hist-${item.rowIndex}`; 
         list.innerHTML += `
           <li class="list-group-item d-flex justify-content-between align-items-center" id="${uniqueId}">
@@ -360,7 +365,6 @@
     }, false);
   }
 
-  // --- 管理設定 ---
   function loadSettingsList() {
     const list = document.getElementById('settingsList');
     list.innerHTML = '<li class="list-group-item text-center text-muted">載入中...</li>';
@@ -395,17 +399,10 @@
     const name = document.getElementById('newSiteName').value;
     const hasMeal = document.getElementById('newSiteMeal').value;
     const price = document.getElementById('newSitePrice').value;
-    
-    // 🔥 修正：傳送供餐與價格參數
-    callApi({ action: "addSetting", formData: { 
-      userId: document.getElementById('userId').value, 
-      type: 'site', 
-      name: name,
-      hasMeal: hasMeal,
-      mealPrice: price
-    } }, (res) => {
+    callApi({ action: "addSetting", formData: { userId: document.getElementById('userId').value, type: 'site', name: name, hasMeal: hasMeal, mealPrice: price } }, (res) => {
       Swal.fire('成功', '工地已新增', 'success');
       document.getElementById('newSiteName').value = "";
+      document.getElementById('newSitePrice').value = "100"; 
       loadSettingsList();
       localStorage.removeItem('initData_' + document.getElementById('userId').value);
     }, true);
@@ -474,8 +471,8 @@
     const isDebt = document.getElementById('typeDebt').checked;
     const hint = document.getElementById('advHint');
     const btn = document.getElementById('btnAdv');
-    if (isDebt) { hint.innerText = "從本月薪資扣除"; hint.className = "form-text text-danger mt-1"; btn.className = "btn btn-secondary w-100 py-2 shadow-sm"; btn.innerText = "確認預支 (扣款)"; } 
-    else { hint.innerText = "補貼給師傅 (代墊款等)"; hint.className = "form-text text-success mt-1"; btn.className = "btn btn-secondary w-100 py-2 shadow-sm"; btn.innerText = "確認請款 (給付)"; }
+    if (isDebt) { hint.innerText = "從本月薪資扣除"; hint.className = "form-text text-danger mt-1 fw-bold"; btn.className = "btn btn-secondary w-100 py-3 shadow-sm fs-5"; btn.innerText = "確認預支 (扣款)"; } 
+    else { hint.innerText = "補貼給師傅 (代墊款等)"; hint.className = "form-text text-success mt-1 fw-bold"; btn.className = "btn btn-secondary w-100 py-3 shadow-sm fs-5"; btn.innerText = "確認請款 (給付)"; }
   }
 </script>
 </body>
