@@ -5,58 +5,162 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>工班管理系統</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <style>
-    /* V7.0 工地風主題 */
-    :root { --primary-navy: #2c3e50; --accent-orange: #d35400; --bg-grey: #f0f2f5; --text-dark: #212529; }
-    body { padding: 0; background-color: var(--bg-grey); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; padding-bottom: 80px; color: var(--text-dark); font-size: 16px; }
-    .nav-header { background: var(--primary-navy); color: #fff; padding: 12px 15px; border-bottom: 3px solid var(--accent-orange); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    /* === V8.0 極致工程版 (無 Emoji, 專業圖標) === */
+    :root {
+      --primary-navy: #2c3e50;
+      --accent-orange: #d35400;
+      --bg-grey: #e9ecef;
+      --text-dark: #212529;
+      --border-color: #ced4da;
+    }
+    body { 
+      padding: 0; background-color: var(--bg-grey); 
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
+      padding-bottom: 100px; color: var(--text-dark); font-size: 16px;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* 頂部導航 */
+    .nav-header { 
+      background: var(--primary-navy); color: #fff; padding: 12px 15px; 
+      border-bottom: 4px solid var(--accent-orange); 
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+      position: sticky; top: 0; z-index: 1020;
+    }
     .company-name { font-size: 1.25rem; font-weight: 700; letter-spacing: 0.5px; }
-    .login-container { height: 100vh; display: flex; flex-direction: column; justify-content: center; padding: 20px; background: var(--primary-navy); color: white; }
-    .login-box { background: white; padding: 30px; border-radius: 4px; color: var(--text-dark); box-shadow: 0 10px 25px rgba(0,0,0,0.3); border-top: 5px solid var(--accent-orange); }
+    .sub-title { font-size: 0.8rem; opacity: 0.8; }
+
+    /* 頁籤優化 - 增大觸控區 */
     .nav-tabs { background: #fff; border-bottom: 1px solid #dee2e6; }
-    .nav-link { color: #6c757d; font-weight: 600; border: none; padding: 16px 0; border-bottom: 3px solid transparent; }
-    .nav-link.active { color: var(--accent-orange); border-bottom: 3px solid var(--accent-orange); background: transparent; }
-    .card { border: 1px solid #ced4da; border-radius: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); margin-bottom: 15px; background: #fff; }
-    .card-header { background-color: #f8f9fa; border-bottom: 1px solid #ced4da; font-weight: 700; color: var(--primary-navy); padding: 12px 15px; }
-    .form-label { font-weight: 700; font-size: 0.9rem; margin-bottom: 4px; }
-    .form-control, .form-select { border-radius: 3px; border: 1px solid #adb5bd; padding: 10px; }
-    .btn { border-radius: 3px; font-weight: 700; padding: 12px; }
+    .nav-link { 
+      color: #6c757d; font-weight: 600; border: none; padding: 15px 0; 
+      border-bottom: 4px solid transparent; font-size: 1rem; 
+    }
+    .nav-link.active { 
+      color: var(--accent-orange); 
+      border-bottom: 4px solid var(--accent-orange); 
+      background: rgba(211, 84, 0, 0.05); 
+    }
+    .nav-link i { margin-right: 5px; font-size: 1.1rem; }
+
+    /* 卡片設計 */
+    .card { 
+      border: 1px solid #ced4da; border-radius: 6px; 
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05); 
+      margin-bottom: 15px; background: #fff; 
+    }
+    .card-header { 
+      background-color: #f8f9fa; border-bottom: 1px solid #ced4da; 
+      font-weight: 700; color: var(--primary-navy); padding: 12px 15px; 
+      display: flex; justify-content: space-between; align-items: center;
+    }
+
+    /* 表單元件 - 加大 */
+    .form-label { font-weight: 700; font-size: 0.95rem; margin-bottom: 5px; color: #343a40; }
+    .form-control, .form-select { 
+      border-radius: 4px; border: 1px solid #adb5bd; padding: 12px; font-size: 1.05rem; 
+    }
+    .form-control:focus, .form-select:focus { border-color: var(--primary-navy); box-shadow: none; }
+    
+    /* 輸入框群組 */
+    .input-group-text {
+      background-color: #e9ecef; border: 1px solid #adb5bd; 
+      font-weight: 600; color: #495057; font-size: 0.9rem;
+    }
+
+    /* 按鈕優化 */
+    .btn { border-radius: 4px; font-weight: 700; padding: 12px; font-size: 1.05rem; letter-spacing: 0.5px; }
     .btn-primary { background-color: var(--primary-navy); border-color: var(--primary-navy); }
     .btn-secondary { background-color: #6c757d; border-color: #6c757d; }
-    .btn-check:checked + .btn-outline-danger { background-color: #c0392b; color: white; }
-    .btn-check:checked + .btn-outline-success { background-color: #27ae60; color: white; }
-    .loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(44, 62, 80, 0.98); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; }
-    .hidden { display: none !important; }
-    .new-item-flash { animation: flashHighlight 1.5s ease-out; }
-    @keyframes flashHighlight { 0% { background-color: #fff3cd; } 100% { background-color: white; } }
-    .list-group-item { border: none; border-bottom: 1px solid #eee; padding: 12px 15px; }
+    
+    /* 列表優化 */
+    .list-group-item { border: none; border-bottom: 1px solid #e9ecef; padding: 15px; }
+    .list-group-item:last-child { border-bottom: none; }
+    
+    /* 載入遮罩 */
+    .loading-overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(44, 62, 80, 0.98); z-index: 9999;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; color: white;
+      transition: opacity 0.3s;
+    }
+    .hidden { display: none !important; opacity: 0; pointer-events: none; }
+    
+    /* 刪除時的狀態 (防手抖) */
+    .deleting { 
+      background-color: #f8d7da !important; 
+      opacity: 0.6; 
+      pointer-events: none; /* 鎖定點擊 */
+    }
+    .deleting button { display: none; } /* 隱藏按鈕防止誤觸 */
+    .deleting::after { content: "刪除中..."; color: #dc3545; font-weight: bold; float: right; }
+
+    /* Login Box */
+    .login-container { height: 100vh; display: flex; flex-direction: column; justify-content: center; padding: 20px; background: var(--primary-navy); color: white; }
+    .login-box { background: white; padding: 30px; border-radius: 6px; color: var(--text-dark); box-shadow: 0 10px 25px rgba(0,0,0,0.3); border-top: 5px solid var(--accent-orange); }
   </style>
 </head>
 <body>
-  <div id="loading" class="loading-overlay"><div class="spinner-border text-light" style="width: 3rem; height: 3rem;" role="status"></div><div class="mt-4 fs-5 fw-bold">系統載入中...</div></div>
-  
+
+  <div id="loading" class="loading-overlay">
+    <div class="spinner-border text-light" style="width: 3rem; height: 3rem;" role="status"></div>
+    <div class="mt-4 fs-5 fw-bold">系統同步中...</div>
+  </div>
+
   <div id="login-app" class="login-container hidden">
-    <div class="text-center mb-4"><h2 class="fw-bold text-white">工班神隊友</h2><p class="opacity-75">請綁定公司以啟用系統</p></div>
+    <div class="text-center mb-4">
+      <h2 class="fw-bold">工班管理系統</h2>
+      <p class="opacity-75">請輸入資訊以綁定權限</p>
+    </div>
     <div class="login-box">
       <form onsubmit="handleRegister(event)">
-        <div class="mb-3"><label class="form-label">您的姓名</label><input type="text" class="form-control" id="regUserName" placeholder="例如：阿宏" required></div>
-        <div class="mb-4"><label class="form-label">公司名稱</label><input type="text" class="form-control" id="regCompanyName" placeholder="請輸入完整公司名稱" required><div class="form-text">必須與 MasterDB 登記的名稱完全一致</div></div>
-        <button type="submit" class="btn btn-warning w-100 py-3 text-dark">啟用系統</button>
+        <div class="mb-3">
+          <label class="form-label">您的姓名</label>
+          <input type="text" class="form-control" id="regUserName" required>
+        </div>
+        <div class="mb-4">
+          <label class="form-label">公司名稱 (需完全相符)</label>
+          <input type="text" class="form-control" id="regCompanyName" required>
+        </div>
+        <button type="submit" class="btn btn-warning w-100 text-dark">啟用系統</button>
       </form>
     </div>
-    <div class="text-center mt-4 text-white opacity-50 small">System V7.0</div>
+    <div class="text-center mt-4 opacity-50 small">System V8.0 Pro</div>
   </div>
 
   <div id="main-app" class="hidden">
-    <div class="nav-header d-flex justify-content-between align-items-center"><div><div class="company-name" id="companyTitle">...</div><div class="small opacity-75">管理後台</div></div><input type="hidden" id="userId"></div>
+    <div class="nav-header d-flex justify-content-between align-items-center">
+      <div>
+        <div class="company-name" id="companyTitle">...</div>
+        <div class="sub-title">現場管理後台</div>
+      </div>
+      <input type="hidden" id="userId">
+    </div>
+
     <ul class="nav nav-tabs nav-fill sticky-top" id="myTab" role="tablist">
-      <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#work-pane">點工回報</button></li>
-      <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#advance-pane">帳務管理</button></li>
-      <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#setting-pane" onclick="loadSettingsList()">後台設定</button></li>
+      <li class="nav-item">
+        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#work-pane">
+          <i class="bi bi-pencil-square"></i> 點工回報
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#advance-pane">
+          <i class="bi bi-cash-coin"></i> 帳務管理
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#setting-pane" onclick="loadSettingsList()">
+          <i class="bi bi-gear-fill"></i> 設定
+        </button>
+      </li>
     </ul>
+
     <div class="tab-content container pt-3">
+      
       <div class="tab-pane fade show active" id="work-pane">
         <div class="card p-3">
           <form onsubmit="handleSubmitWork(event)">
@@ -70,15 +174,33 @@
               <div class="col-6 mb-3"><label class="form-label">便當 (個)</label><input type="number" class="form-control" id="bento" value="0"></div>
             </div>
             <div class="mb-3">
-              <label class="form-label">加班時數 (請填小時)</label>
-              <div class="input-group mb-2"><span class="input-group-text">A時段</span><input type="number" class="form-control" id="otA" placeholder="18:00~22:00"></div>
-              <div class="input-group"><span class="input-group-text">B時段</span><input type="number" class="form-control" id="otB" placeholder="22:00~24:00"></div>
+              <label class="form-label">加班時數 (單位：小時)</label>
+              <div class="input-group mb-2">
+                <span class="input-group-text">A時段 (18-22)</span>
+                <input type="number" class="form-control" id="otA" placeholder="0">
+              </div>
+              <div class="input-group">
+                <span class="input-group-text">B時段 (22-24)</span>
+                <input type="number" class="form-control" id="otB" placeholder="0">
+              </div>
             </div>
-            <button type="submit" class="btn btn-primary w-100 shadow-sm">送出紀錄</button>
+            <button type="submit" class="btn btn-primary w-100 shadow-sm">
+              <i class="bi bi-check-lg"></i> 確認送出 (連續輸入)
+            </button>
           </form>
         </div>
-        <div class="card"><div class="card-header d-flex justify-content-between align-items-center"><span>今日已登記</span><button class="btn btn-sm btn-outline-secondary" onclick="loadHistory()">刷新</button></div><ul class="list-group list-group-flush" id="historyList"></ul></div>
+        
+        <div class="card">
+          <div class="card-header">
+            <span>今日已登記</span>
+            <button class="btn btn-sm btn-outline-secondary" onclick="loadHistory()"><i class="bi bi-arrow-clockwise"></i> 刷新</button>
+          </div>
+          <ul class="list-group list-group-flush" id="historyList">
+            <li class="list-group-item text-center text-muted">載入中...</li>
+          </ul>
+        </div>
       </div>
+
       <div class="tab-pane fade" id="advance-pane">
         <div class="card p-3" style="border-top: 4px solid #d35400;">
           <h6 class="fw-bold mb-3">新增帳務</h6>
@@ -91,13 +213,21 @@
             </div>
             <div class="mb-3"><label class="form-label">日期</label><input type="date" class="form-control" id="advDate" required></div>
             <div class="mb-3"><label class="form-label">師傅</label><select class="form-select" id="advWorker" required><option value="" disabled selected>請選擇</option></select></div>
-            <div class="mb-3"><label class="form-label">金額</label><input type="number" class="form-control" id="advAmount" placeholder="輸入金額" required><div id="advHint" class="form-text text-danger mt-1 fw-bold">從本月薪資扣除</div></div>
+            <div class="mb-3">
+              <label class="form-label">金額</label>
+              <input type="number" class="form-control" id="advAmount" placeholder="輸入金額" required>
+              <div id="advHint" class="form-text text-danger mt-1 fw-bold">從本月薪資扣除</div>
+            </div>
             <div class="mb-3"><label class="form-label">備註</label><input type="text" class="form-control" id="advNote" placeholder="用途說明"></div>
             <button type="submit" id="btnAdv" class="btn btn-secondary w-100 shadow-sm">確認送出</button>
           </form>
         </div>
-        <div class="card"><div class="card-header d-flex justify-content-between align-items-center"><span>最近帳務</span><button class="btn btn-sm btn-outline-secondary" onclick="loadAdvanceHistory()">刷新</button></div><ul class="list-group list-group-flush" id="advanceList"></ul></div>
+        <div class="card">
+          <div class="card-header d-flex justify-content-between align-items-center"><span>最近帳務</span><button class="btn btn-sm btn-outline-secondary" onclick="loadAdvanceHistory()"><i class="bi bi-arrow-clockwise"></i></button></div>
+          <ul class="list-group list-group-flush" id="advanceList"></ul>
+        </div>
       </div>
+
       <div class="tab-pane fade" id="setting-pane">
         <div class="card p-3 mb-3">
           <h6 class="fw-bold mb-3">新增師傅資料</h6>
@@ -115,21 +245,30 @@
             <div class="mb-2"><label class="form-label small">工地名稱</label><input type="text" class="form-control" id="newSiteName" required></div>
             <div class="row g-2 mb-2">
               <div class="col-6"><label class="form-label small">是否供餐</label><select class="form-select" id="newSiteMeal"><option value="是">有供餐</option><option value="否">無供餐</option></select></div>
-              <div class="col-6"><label class="form-label small">便當單價</label><input type="number" class="form-control" id="newSitePrice" placeholder="若無免填"></div>
+              <div class="col-6"><label class="form-label small">便當單價</label><input type="number" class="form-control" id="newSitePrice" placeholder="0"></div>
             </div>
             <button class="btn btn-dark w-100" type="submit">新增工地</button>
           </form>
         </div>
-        <div class="card"><div class="card-header">目前設定名單</div><ul class="list-group list-group-flush" id="settingsList"><li class="list-group-item text-center text-muted">載入中...</li></ul></div>
+        <div class="card">
+          <div class="card-header">目前設定名單</div>
+          <ul class="list-group list-group-flush" id="settingsList"><li class="list-group-item text-center text-muted">載入中...</li></ul>
+        </div>
       </div>
-    </div>
+    </div> 
+
     <div class="container pb-3">
       <div class="card border-0 shadow-sm mt-2">
         <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
-          <div class="d-flex align-items-center"><span class="me-2 fw-bold">本月結算</span><input type="month" id="reportMonthPicker" class="form-control form-control-sm" style="width: 140px; border:none;" onchange="loadReport()"></div>
-          <button class="btn btn-sm btn-outline-light" onclick="loadReport()">刷新</button>
+          <div class="d-flex align-items-center">
+            <span class="me-2 fw-bold"><i class="bi bi-bar-chart-fill"></i> 本月結算</span>
+            <input type="month" id="reportMonthPicker" class="form-control form-control-sm" style="width: 140px; border:none;" onchange="loadReport()">
+          </div>
+          <button class="btn btn-sm btn-outline-light" onclick="loadReport()"><i class="bi bi-arrow-clockwise"></i></button>
         </div>
-        <div class="card-body p-0"><div id="reportContainer" class="accordion accordion-flush"><div class="p-4 text-center text-muted">載入中...</div></div></div>
+        <div class="card-body p-0">
+          <div id="reportContainer" class="accordion accordion-flush"><div class="p-4 text-center text-muted">載入中...</div></div>
+        </div>
       </div>
     </div>
   </div>
@@ -138,39 +277,215 @@
 <script>
   const LIFF_ID = "2008802133-cGpq8Rq1"; 
   const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxdi4l3oJCOCjIt7IsVphGhMGeE57NrZKeAzKIfavHvM2Hlb3fvNxra7bmy_Isn4F5SKA/exec"; 
-  const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, timerProgressBar: true, didOpen: (toast) => { toast.addEventListener('mouseenter', Swal.stopTimer); toast.addEventListener('mouseleave', Swal.resumeTimer); } });
+  
+  const Toast = Swal.mixin({
+    toast: true, position: 'top-end', showConfirmButton: false, timer: 2000,
+    timerProgressBar: false, didOpen: (toast) => { toast.addEventListener('mouseenter', Swal.stopTimer); toast.addEventListener('mouseleave', Swal.resumeTimer); }
+  });
 
   window.onload = function() {
     const today = new Date();
     document.getElementById('date').valueAsDate = today;
     document.getElementById('advDate').valueAsDate = today;
     document.getElementById('reportMonthPicker').value = today.toISOString().slice(0, 7);
-    initLiff(); updateAdvHint(); 
+    initLiff();
+    updateAdvHint(); 
   };
 
-  function initLiff() { liff.init({ liffId: LIFF_ID }).then(() => { if (liff.isLoggedIn()) getUserProfile(); else liff.login(); }).catch(err => Swal.fire('錯誤', 'LIFF Init Failed: '+err, 'error')); }
-  function getUserProfile() { liff.getProfile().then(profile => { document.getElementById('userId').value = profile.userId; fetchInitData(profile.userId); }); }
-  function refreshAll() { loadHistory(); loadAdvanceHistory(); loadReport(); }
-
-  function fetchInitData(userId) {
-    const cached = localStorage.getItem('initData_' + userId);
-    if (cached) renderInitData(JSON.parse(cached));
-    fetch(GAS_API_URL, { method: "POST", body: JSON.stringify({ action: "getInitData", userId: userId }) }).then(res => res.json()).then(res => {
-      document.getElementById('loading').classList.add('hidden');
-      if (res.status === "unregistered") { document.getElementById('login-app').classList.remove('hidden'); document.getElementById('main-app').classList.add('hidden'); localStorage.removeItem('initData_' + userId); }
-      else if (res.status === "success") { localStorage.setItem('initData_' + userId, JSON.stringify(res)); renderInitData(res); }
-      else { Swal.fire('系統錯誤', res.message, 'error'); }
-    }).catch(err => Swal.fire('連線失敗', '無法連接伺服器', 'error'));
+  function initLiff() {
+    liff.init({ liffId: LIFF_ID }).then(() => {
+      if (liff.isLoggedIn()) getUserProfile(); else liff.login();
+    }).catch(err => {
+      console.error('LIFF Error:', err);
+      // 靜默失敗，不要跳視窗嚇使用者，可能只是網路慢
+    });
   }
 
-  function renderInitData(res) { document.getElementById('login-app').classList.add('hidden'); document.getElementById('main-app').classList.remove('hidden'); document.getElementById('companyTitle').innerText = res.company; updateSelect('site', res.sites); updateSelect('worker', res.workers); updateSelect('advWorker', res.workers); refreshAll(); }
-  function handleRegister(e) { e.preventDefault(); const name = document.getElementById('regUserName').value; const company = document.getElementById('regCompanyName').value; const userId = document.getElementById('userId').value; Swal.fire({ title: '綁定中...', text: '正在尋找您的公司資料庫', allowOutsideClick: false, didOpen: () => Swal.showLoading() }); fetch(GAS_API_URL, { method: "POST", body: JSON.stringify({ action: "registerUser", userId: userId, userName: name, companyName: company }) }).then(res => res.json()).then(res => { if (res.status === "success") { Swal.fire('成功', '綁定完成！', 'success').then(() => location.reload()); } else { Swal.fire('綁定失敗', res.message, 'error'); } }); }
-  function callApi(payload, onSuccess, showLoading=false) { if(showLoading) Swal.fire({ title: '處理中...', allowOutsideClick: false, didOpen: () => { Swal.showLoading() } }); fetch(GAS_API_URL, { method: "POST", body: JSON.stringify(payload) }).then(res => res.json()).then(res => { if(showLoading) Swal.close(); if (res.status === "success") onSuccess(res); else Swal.fire('系統訊息', res.message, 'error'); }).catch(err => { if(showLoading) Swal.close(); Swal.fire('連線失敗', '請檢查網路連線', 'error'); }); }
-  function handleSubmitWork(e) { e.preventDefault(); const workerSelect = document.getElementById('worker'); const siteSelect = document.getElementById('site'); const workerName = workerSelect.options[workerSelect.selectedIndex].text; const siteName = siteSelect.options[siteSelect.selectedIndex].text; const count = document.getElementById('count').value; const dateVal = document.getElementById('date').value; const formData = { userId: document.getElementById('userId').value, date: dateVal, site: document.getElementById('site').value, worker: document.getElementById('worker').value, count: count, bento: document.getElementById('bento').value, otA: document.getElementById('otA').value, otB: document.getElementById('otB').value }; const list = document.getElementById('historyList'); const tempId = 'temp-' + new Date().getTime(); const dateObj = new Date(dateVal); const dateStr = (dateObj.getMonth()+1) + '/' + dateObj.getDate(); const tempHtml = `<li class="list-group-item d-flex justify-content-between align-items-center new-item-flash" id="${tempId}"><div><span class="badge bg-dark me-1">${dateStr}</span><span class="fw-bold">${workerName}</span><small class="text-muted d-block">${siteName}</small></div><div class="text-end"><span class="badge bg-secondary rounded-pill">${count}工</span><small class="text-muted ms-1">儲存中...</small></div></li>`; list.insertAdjacentHTML('afterbegin', tempHtml); Toast.fire({ icon: 'success', title: '已送出紀錄' }); fetch(GAS_API_URL, { method: "POST", body: JSON.stringify({ action: "submitForm", formData: formData }) }).then(res => res.json()).then(res => { if (res.status === "success") loadHistory(true); else { Swal.fire('錯誤', res.message, 'error'); document.getElementById(tempId).remove(); } }); }
+  function getUserProfile() {
+    liff.getProfile().then(profile => {
+      document.getElementById('userId').value = profile.userId;
+      fetchInitData(profile.userId);
+    });
+  }
+
+  function refreshAll() { loadHistory(); loadAdvanceHistory(); loadReport(); }
+
+  // 🔥 核心優化：快取優先 (Cache First Strategy)
+  function fetchInitData(userId) {
+    const cached = localStorage.getItem('initData_' + userId);
+    
+    // 1. 有快取，先顯示，0秒等待
+    if (cached) {
+      console.log("Using Cache");
+      renderInitData(JSON.parse(cached));
+    }
+    
+    // 2. 背景默默去更新，不打擾使用者
+    callApi({ action: "getInitData", userId: userId }, (res) => {
+      if (res.status === "unregistered") {
+        document.getElementById('login-app').classList.remove('hidden');
+        document.getElementById('main-app').classList.add('hidden');
+        localStorage.removeItem('initData_' + userId);
+      } else if (res.status === "success") {
+        localStorage.setItem('initData_' + userId, JSON.stringify(res));
+        // 如果還沒顯示過 (第一次用)，才渲染，避免下拉選單跳掉
+        if (!cached || document.getElementById('site').options.length <= 1) {
+           renderInitData(res);
+        }
+      }
+    }, false); // false = 不顯示 Loading
+  }
+
+  function renderInitData(res) {
+    document.getElementById('loading').classList.add('hidden');
+    document.getElementById('login-app').classList.add('hidden');
+    document.getElementById('main-app').classList.remove('hidden');
+    document.getElementById('companyTitle').innerText = res.company;
+    
+    // 只有當選單是空的時候才更新，避免爸爸選到一半被重置
+    updateSelectIfEmpty('site', res.sites);
+    updateSelectIfEmpty('worker', res.workers);
+    updateSelectIfEmpty('advWorker', res.workers);
+    
+    refreshAll();
+  }
+
+  function updateSelectIfEmpty(id, items) {
+    const sel = document.getElementById(id);
+    if (sel.options.length <= 1) {
+        sel.innerHTML = '<option value="" disabled selected>請選擇</option>';
+        items.forEach(i => sel.add(new Option(i, i)));
+    }
+  }
+
+  // 🔥 核心優化：API 自動重試 (解決網路不穩)
+  function callApi(payload, onSuccess, showLoading=false, retries=3) {
+    if(showLoading) Swal.fire({ title: '處理中...', allowOutsideClick: false, didOpen: () => { Swal.showLoading() } });
+    
+    fetch(GAS_API_URL, { method: "POST", body: JSON.stringify(payload) })
+    .then(res => res.json())
+    .then(res => {
+      if(showLoading) Swal.close();
+      if (res.status === "success") onSuccess(res);
+      else Swal.fire('錯誤', res.message, 'error');
+    })
+    .catch(err => {
+      if (retries > 0) {
+        console.log(`連線失敗，自動重試... 剩餘次數 ${retries}`);
+        setTimeout(() => callApi(payload, onSuccess, showLoading, retries - 1), 1500);
+      } else {
+        if(showLoading) Swal.close();
+        Swal.fire('連線不穩', '請檢查網路訊號後重試', 'error');
+      }
+    });
+  }
+
+  // 🔥 核心優化：連續輸入模式 (保留日期與工地)
+  function handleSubmitWork(e) {
+    e.preventDefault();
+    const workerSelect = document.getElementById('worker');
+    const siteSelect = document.getElementById('site');
+    const workerName = workerSelect.options[workerSelect.selectedIndex].text;
+    const siteName = siteSelect.options[siteSelect.selectedIndex].text;
+    const count = document.getElementById('count').value;
+    const dateVal = document.getElementById('date').value;
+    const otA = document.getElementById('otA').value;
+    const otB = document.getElementById('otB').value;
+
+    const formData = {
+      userId: document.getElementById('userId').value, date: dateVal, site: document.getElementById('site').value, worker: document.getElementById('worker').value,
+      count: count, bento: document.getElementById('bento').value, otA: otA, otB: otB
+    };
+
+    // 樂觀 UI
+    const list = document.getElementById('historyList');
+    const tempId = 'temp-' + new Date().getTime(); 
+    const dateObj = new Date(dateVal);
+    const dateStr = (dateObj.getMonth()+1) + '/' + dateObj.getDate();
+    
+    // 移除 "載入中"
+    const emptyMsg = list.querySelector('.text-muted');
+    if(emptyMsg) emptyMsg.remove();
+
+    const tempHtml = `
+      <li class="list-group-item d-flex justify-content-between align-items-center new-item-flash" id="${tempId}">
+        <div>
+            <span class="badge bg-dark me-1">${dateStr}</span>
+            <span class="fw-bold">${workerName}</span>
+            <small class="text-muted d-block">${siteName}</small>
+        </div>
+        <div class="text-end">
+          <span class="badge bg-secondary rounded-pill">${count}工</span>
+          <div class="text-success small fw-bold">儲存中...</div>
+        </div>
+      </li>`;
+    list.insertAdjacentHTML('afterbegin', tempHtml);
+    Toast.fire({ icon: 'success', title: '已加入' });
+
+    // 只清空師傅相關，保留日期與工地
+    document.getElementById('worker').value = ""; 
+    document.getElementById('count').value = "1"; 
+    document.getElementById('bento').value = "0"; 
+    document.getElementById('otA').value = "";
+    document.getElementById('otB').value = "";
+
+    callApi({ action: "submitForm", formData: formData }, (res) => {
+       // 背景偷偷刷新，將暫存轉為正式 ID
+       loadHistory(true); 
+    }, false);
+  }
+
+  // 🔥 核心優化：刪除防手抖 (Anti-Misclick)
+  function deleteItem(action, rowIndex, elementId, desc) {
+    Swal.fire({
+      title: '確定刪除？',
+      html: `<div class="alert alert-light text-start border">${desc}</div>`,
+      icon: 'warning',
+      showCancelButton: true, confirmButtonText: '確認刪除', cancelButtonText: '取消',
+      confirmButtonColor: '#dc3545', cancelButtonColor: '#6c757d',
+      focusCancel: true // 預設聚焦在取消，防止連點
+    }).then((result) => {
+      if (result.isConfirmed) {
+        const row = document.getElementById(elementId);
+        if(row) {
+            row.classList.add('deleting'); // 變灰並鎖定
+        }
+        callApi({ action: action, userId: document.getElementById('userId').value, rowIndex: rowIndex }, (res) => { 
+            if(row) row.remove();
+            loadReport(); 
+        }, false);
+      }
+    });
+  }
+
+  function loadHistory(silent = false) {
+    const list = document.getElementById('historyList');
+    if(!silent) list.innerHTML = '<li class="list-group-item text-center text-muted">載入中...</li>';
+    
+    fetch(GAS_API_URL, { method: "POST", body: JSON.stringify({ action: "getHistory", userId: document.getElementById('userId').value }) })
+    .then(res => res.json())
+    .then(res => {
+      if (res.status === "success") {
+        list.innerHTML = "";
+        if (!res.data || res.data.length === 0) { list.innerHTML = '<li class="list-group-item text-center text-muted">今日尚無資料</li>'; return; }
+        res.data.forEach((item) => {
+          const uniqueId = `hist-${item.rowIndex}`; 
+          const desc = `<strong>${item.worker}</strong><br>${item.date} @ ${item.site} (${item.count}工)`;
+          list.innerHTML += `
+            <li class="list-group-item d-flex justify-content-between align-items-center" id="${uniqueId}">
+              <div><span class="badge bg-dark me-1">${item.date}</span><span class="fw-bold">${item.worker}</span><small class="text-muted d-block">${item.site}</small></div>
+              <div class="text-end"><span class="badge bg-secondary rounded-pill">${item.count}工</span>
+              <button class="btn btn-sm btn-outline-danger ms-2" onclick="deleteItem('deleteRecord', ${item.rowIndex}, '${uniqueId}', '${desc}')"><i class="bi bi-trash"></i> 刪除</button></div>
+            </li>`;
+        });
+      }
+    });
+  }
+
+  // 其他函式維持標準化
   function handleSubmitAdvance(e) { e.preventDefault(); const isDebt = document.getElementById('typeDebt').checked; let amount = Number(document.getElementById('advAmount').value); if (!isDebt) amount = -amount; const formData = { userId: document.getElementById('userId').value, worker: document.getElementById('advWorker').value, date: document.getElementById('advDate').value, amount: amount, note: document.getElementById('advNote').value }; callApi({ action: "submitAdvance", formData: formData }, (res) => { Swal.fire({icon: 'success', title: '帳務已紀錄', timer: 1500, showConfirmButton: false}); document.getElementById('advAmount').value = ""; document.getElementById('advNote').value = ""; refreshAll(); }, true); }
-  function deleteItem(action, rowIndex, elementId) { Swal.fire({ title: '確定刪除？', icon: 'warning', showCancelButton: true, confirmButtonText: '刪除', cancelButtonText: '取消', customClass: { confirmButton: 'btn btn-danger', cancelButton: 'btn btn-secondary' } }).then((result) => { if (result.isConfirmed) { const row = document.getElementById(elementId); if(row) row.remove(); callApi({ action: action, userId: document.getElementById('userId').value, rowIndex: rowIndex }, (res) => { loadReport(); }, false); } }); }
-  function loadHistory(silent = false) { const list = document.getElementById('historyList'); if(!silent) list.innerHTML = '<li class="list-group-item text-center text-muted">載入中...</li>'; fetch(GAS_API_URL, { method: "POST", body: JSON.stringify({ action: "getHistory", userId: document.getElementById('userId').value }) }).then(res => res.json()).then(res => { if (res.status === "success") { list.innerHTML = ""; if (!res.data || res.data.length === 0) { list.innerHTML = '<li class="list-group-item text-center text-muted">無資料</li>'; return; } res.data.forEach((item) => { const uniqueId = `hist-${item.rowIndex}`; list.innerHTML += `<li class="list-group-item d-flex justify-content-between align-items-center" id="${uniqueId}"><div><span class="badge bg-dark me-1">${item.date}</span><span class="fw-bold">${item.worker}</span><small class="text-muted d-block">${item.site}</small></div><div class="text-end"><span class="badge bg-secondary rounded-pill">${item.count}工</span><button class="btn btn-sm btn-outline-danger ms-2" onclick="deleteItem('deleteRecord', ${item.rowIndex}, '${uniqueId}')">刪除</button></div></li>`; }); } }); }
-  function loadAdvanceHistory() { callApi({ action: "getAdvanceHistory", userId: document.getElementById('userId').value }, (res) => { const list = document.getElementById('advanceList'); list.innerHTML = ""; if (!res.data || res.data.length === 0) { list.innerHTML = '<li class="list-group-item text-center text-muted">無資料</li>'; return; } res.data.forEach((item) => { const uniqueId = `adv-${item.rowIndex}`; let colorClass = item.amount > 0 ? "text-danger" : "text-success"; let displayAmount = item.amount > 0 ? `-${fmt(item.amount)}` : `+${fmt(Math.abs(item.amount))}`; list.innerHTML += `<li class="list-group-item d-flex justify-content-between align-items-center" id="${uniqueId}"><div><span class="badge bg-light text-dark border me-1">${item.date}</span><span class="fw-bold ${colorClass}">${item.worker}</span><small class="text-muted d-block">${item.note}</small></div><div class="text-end"><span class="${colorClass} fw-bold money-text">${displayAmount}</span><button class="btn btn-sm btn-outline-danger ms-2" onclick="deleteItem('deleteAdvance', ${item.rowIndex}, '${uniqueId}')">刪除</button></div></li>`; }); }, false); }
+  function loadAdvanceHistory() { callApi({ action: "getAdvanceHistory", userId: document.getElementById('userId').value }, (res) => { const list = document.getElementById('advanceList'); list.innerHTML = ""; if (!res.data || res.data.length === 0) { list.innerHTML = '<li class="list-group-item text-center text-muted">尚無資料</li>'; return; } res.data.forEach((item) => { const uniqueId = `adv-${item.rowIndex}`; let colorClass = item.amount > 0 ? "text-danger" : "text-success"; let displayAmount = item.amount > 0 ? `-${fmt(item.amount)}` : `+${fmt(Math.abs(item.amount))}`; const desc = `${item.date} ${item.worker} $${item.amount}`; list.innerHTML += `<li class="list-group-item d-flex justify-content-between align-items-center" id="${uniqueId}"><div><span class="badge bg-light text-dark border me-1">${item.date}</span><span class="fw-bold ${colorClass}">${item.worker}</span><small class="text-muted d-block">${item.note}</small></div><div class="text-end"><span class="${colorClass} fw-bold money-text">${displayAmount}</span><button class="btn btn-sm btn-outline-danger ms-2" onclick="deleteItem('deleteAdvance', ${item.rowIndex}, '${uniqueId}', '${desc}')"><i class="bi bi-trash"></i></button></div></li>`; }); }, false); }
+  function handleRegister(e) { e.preventDefault(); const name = document.getElementById('regUserName').value; const company = document.getElementById('regCompanyName').value; const userId = document.getElementById('userId').value; Swal.fire({ title: '綁定中...', text: '正在尋找資料庫', allowOutsideClick: false, didOpen: () => Swal.showLoading() }); fetch(GAS_API_URL, { method: "POST", body: JSON.stringify({ action: "registerUser", userId: userId, userName: name, companyName: company }) }).then(res => res.json()).then(res => { if (res.status === "success") { Swal.fire('成功', '綁定完成', 'success').then(() => location.reload()); } else { Swal.fire('綁定失敗', res.message, 'error'); } }); }
   function loadSettingsList() { const list = document.getElementById('settingsList'); list.innerHTML = '<li class="list-group-item text-center text-muted">載入中...</li>'; callApi({ action: "getSettingsList", userId: document.getElementById('userId').value }, (res) => { list.innerHTML = ""; list.innerHTML += `<li class="list-group-item bg-light fw-bold small">師傅名單</li>`; res.data.workers.forEach(w => list.innerHTML += `<li class="list-group-item d-flex justify-content-between"><span>${w.name} ($${w.salary})</span><button class="btn btn-sm btn-outline-secondary" onclick="deleteSetting('worker', ${w.rowIndex})">移除</button></li>`); list.innerHTML += `<li class="list-group-item bg-light fw-bold small mt-2">工地名單</li>`; res.data.sites.forEach(s => list.innerHTML += `<li class="list-group-item d-flex justify-content-between"><span>${s.name}</span><button class="btn btn-sm btn-outline-secondary" onclick="deleteSetting('site', ${s.rowIndex})">移除</button></li>`); }, false); }
   function handleAddWorker(e) { e.preventDefault(); const name = document.getElementById('newWorkerName').value; const salary = document.getElementById('newWorkerSalary').value; callApi({ action: "addSetting", formData: { userId: document.getElementById('userId').value, type: 'worker', name: name, salary: salary } }, (res) => { Swal.fire('成功', '師傅已新增', 'success'); document.getElementById('newWorkerName').value = ""; document.getElementById('newWorkerSalary').value = ""; loadSettingsList(); localStorage.removeItem('initData_' + document.getElementById('userId').value); }, true); }
   function handleAddSite(e) { e.preventDefault(); const name = document.getElementById('newSiteName').value; const hasMeal = document.getElementById('newSiteMeal').value; const price = document.getElementById('newSitePrice').value; callApi({ action: "addSetting", formData: { userId: document.getElementById('userId').value, type: 'site', name: name, hasMeal: hasMeal, mealPrice: price } }, (res) => { Swal.fire('成功', '工地已新增', 'success'); document.getElementById('newSiteName').value = ""; loadSettingsList(); localStorage.removeItem('initData_' + document.getElementById('userId').value); }, true); }
