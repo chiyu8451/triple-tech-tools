@@ -465,6 +465,8 @@
         callApi({ action: action, userId: document.getElementById('userId').value, rowIndex: rowIndex }, (res) => { 
             if(row) row.remove();
             loadReport(); 
+            loadHistory(); // 加入這行：強制重新抓取點工紀錄，更新 rowIndex
+            loadAdvanceHistory(); // 加入這行：強制重新抓取帳務紀錄
         }, false);
       }
     });
