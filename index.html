@@ -358,28 +358,40 @@
     }
   }
 
-  // 🔥 核心優化：API 自動重試 (解決網路不穩)
   function callApi(payload, onSuccess, showLoading=false, retries=3) {
-    if(showLoading) Swal.fire({ title: '處理中...', allowOutsideClick: false, didOpen: () => { Swal.showLoading() } });
-    
-    fetch(GAS_API_URL, { method: "POST", body: JSON.stringify(payload) })
-    .then(res => res.json())
-    .then(res => {
-      if(showLoading) Swal.close();
-      if (res.status === "success") onSuccess(res);
-      else Swal.fire('錯誤', res.message, 'error');
-    })
-    .catch(err => {
-      if (retries > 0) {
-        console.log(`連線失敗，自動重試... 剩餘次數 ${retries}`);
-        setTimeout(() => callApi(payload, onSuccess, showLoading, retries - 1), 1500);
-      } else {
-        if(showLoading) Swal.close();
-        Swal.fire('連線不穩', '請檢查網路訊號後重試', 'error');
-      }
-    });
-  }
-
+  if(showLoading) Swal.fire({ title: '處理中...', allowOutsideClick: false, didOpen: () => { Swal.showLoading() } });
+  
+  fetch(GAS_API_URL, { method: "POST", body: JSON.stringify(payload) })
+  .then(res => res.json())
+  .then(res => {
+    if(showLoading) Swal.close();
+    if (res.status === "success") onSuccess(res);
+    else Swal.fire('錯誤', res.message, 'error'); // 維持不變，伺服器返回的業務邏輯錯誤仍需通知
+  })
+  .catch(err => {
+    if (retries > 0) {
+      console.log(`連線失敗，自動重試... 剩餘次數 ${retries}`);
+      setTimeout(() => callApi(payload, onSuccess, showLoading, retries - 1), 1500); // 失敗後延遲 1.5 秒重試
+    } else {
+      // 當所有重試都失敗時...
+      if(showLoading) {
+        // 情境 1：關鍵操作失敗，跳彈窗，優化訊息
+        Swal.close();
+        Swal.fire({
+          icon: 'error',
+          title: '連線失敗',
+          text: '無法連線至伺服器，請確認網路訊號後重試或重新整理頁面。',
+          confirmButtonText: '我知道了'
+        });
+      } else {
+        // 情境 2：背景或非關鍵操作失敗，不打斷，用 Toast 和 Console
+        Toast.fire({ icon: 'warning', title: '部分資料同步延遲，系統將自動重試' });
+        console.error('API 呼叫在所有重試後仍然失敗:', payload.action, err);
+      }
+    }
+  });
+}
+  
   // 🔥 核心優化：連續輸入模式 (保留日期與工地)
   function handleSubmitWork(e) {
     e.preventDefault();
