@@ -193,7 +193,7 @@
         <div class="card">
           <div class="card-header">
             <span>今日已登記</span>
-            <button class="btn btn-sm btn-outline-secondary" onclick="loadHistory()"><i class="bi bi-arrow-clockwise"></i> 刷新</button>
+            <button class="btn btn-sm btn-outline-secondary" onclick="loadHistory(false)"><i class="bi bi-arrow-clockwise"></i> 刷新</button>
           </div>
           <ul class="list-group list-group-flush" id="historyList">
             <li class="list-group-item text-center text-muted">載入中...</li>
@@ -223,7 +223,7 @@
           </form>
         </div>
         <div class="card">
-          <div class="card-header d-flex justify-content-between align-items-center"><span>最近帳務</span><button class="btn btn-sm btn-outline-secondary" onclick="loadAdvanceHistory()"><i class="bi bi-arrow-clockwise"></i></button></div>
+          <div class="card-header d-flex justify-content-between align-items-center"><span>最近帳務</span><button class="btn btn-sm btn-outline-secondary" onclick="loadAdvanceHistory(false)"><i class="bi bi-arrow-clockwise"></i></button></div>
           <ul class="list-group list-group-flush" id="advanceList"></ul>
         </div>
       </div>
@@ -262,9 +262,9 @@
         <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
           <div class="d-flex align-items-center">
             <span class="me-2 fw-bold"><i class="bi bi-bar-chart-fill"></i> 本月結算</span>
-            <input type="month" id="reportMonthPicker" class="form-control form-control-sm" style="width: 140px; border:none;" onchange="loadReport()">
+            <input type="month" id="reportMonthPicker" class="form-control form-control-sm" style="width: 140px; border:none;" onchange="loadReport(false)">
           </div>
-          <button class="btn btn-sm btn-outline-light" onclick="loadReport()"><i class="bi bi-arrow-clockwise"></i></button>
+          <button class="btn btn-sm btn-outline-light" onclick="loadReport(false)"><i class="bi bi-arrow-clockwise"></i></button>
         </div>
         <div class="card-body p-0">
           <div id="reportContainer" class="accordion accordion-flush"><div class="p-4 text-center text-muted">載入中...</div></div>
@@ -297,7 +297,6 @@
       if (liff.isLoggedIn()) getUserProfile(); else liff.login();
     }).catch(err => {
       console.error('LIFF Error:', err);
-      // 靜默失敗，不要跳視窗嚇使用者，可能只是網路慢
     });
   }
 
@@ -308,19 +307,18 @@
     });
   }
 
-  function refreshAll() { loadHistory(); loadAdvanceHistory(); loadReport(); }
+  function refreshAll(silent = false) { 
+    loadHistory(silent); 
+    loadAdvanceHistory(silent); 
+    loadReport(silent); 
+  }
 
-  // 🔥 核心優化：快取優先 (Cache First Strategy)
   function fetchInitData(userId) {
     const cached = localStorage.getItem('initData_' + userId);
-    
-    // 1. 有快取，先顯示，0秒等待
     if (cached) {
       console.log("Using Cache");
-      renderInitData(JSON.parse(cached));
+      renderInitData(JSON.parse(cached), true);
     }
-    
-    // 2. 背景默默去更新，不打擾使用者
     callApi({ action: "getInitData", userId: userId }, (res) => {
       if (res.status === "unregistered") {
         document.getElementById('login-app').classList.remove('hidden');
@@ -328,26 +326,24 @@
         localStorage.removeItem('initData_' + userId);
       } else if (res.status === "success") {
         localStorage.setItem('initData_' + userId, JSON.stringify(res));
-        // 如果還沒顯示過 (第一次用)，才渲染，避免下拉選單跳掉
         if (!cached || document.getElementById('site').options.length <= 1) {
-           renderInitData(res);
+           renderInitData(res, false);
         }
       }
-    }, false); // false = 不顯示 Loading
+    }, false);
   }
 
-  function renderInitData(res) {
+  function renderInitData(res, isCache = false) {
     document.getElementById('loading').classList.add('hidden');
     document.getElementById('login-app').classList.add('hidden');
     document.getElementById('main-app').classList.remove('hidden');
     document.getElementById('companyTitle').innerText = res.company;
     
-    // 只有當選單是空的時候才更新，避免爸爸選到一半被重置
     updateSelectIfEmpty('site', res.sites);
     updateSelectIfEmpty('worker', res.workers);
     updateSelectIfEmpty('advWorker', res.workers);
     
-    refreshAll();
+    refreshAll(isCache); 
   }
 
   function updateSelectIfEmpty(id, items) {
@@ -359,40 +355,36 @@
   }
 
   function callApi(payload, onSuccess, showLoading=false, retries=3) {
-  if(showLoading) Swal.fire({ title: '處理中...', allowOutsideClick: false, didOpen: () => { Swal.showLoading() } });
-  
-  fetch(GAS_API_URL, { method: "POST", body: JSON.stringify(payload) })
-  .then(res => res.json())
-  .then(res => {
-    if(showLoading) Swal.close();
-    if (res.status === "success") onSuccess(res);
-    else Swal.fire('錯誤', res.message, 'error'); // 維持不變，伺服器返回的業務邏輯錯誤仍需通知
-  })
-  .catch(err => {
-    if (retries > 0) {
-      console.log(`連線失敗，自動重試... 剩餘次數 ${retries}`);
-      setTimeout(() => callApi(payload, onSuccess, showLoading, retries - 1), 1500); // 失敗後延遲 1.5 秒重試
-    } else {
-      // 當所有重試都失敗時...
-      if(showLoading) {
-        // 情境 1：關鍵操作失敗，跳彈窗，優化訊息
-        Swal.close();
-        Swal.fire({
-          icon: 'error',
-          title: '連線失敗',
-          text: '無法連線至伺服器，請確認網路訊號後重試或重新整理頁面。',
-          confirmButtonText: '我知道了'
-        });
-      } else {
-        // 情境 2：背景或非關鍵操作失敗，不打斷，用 Toast 和 Console
-        Toast.fire({ icon: 'warning', title: '部分資料同步延遲，系統將自動重試' });
-        console.error('API 呼叫在所有重試後仍然失敗:', payload.action, err);
-      }
-    }
-  });
-}
+    if(showLoading) Swal.fire({ title: '處理中...', allowOutsideClick: false, didOpen: () => { Swal.showLoading() } });
+    
+    fetch(GAS_API_URL, { method: "POST", body: JSON.stringify(payload) })
+    .then(res => res.json())
+    .then(res => {
+      if(showLoading) Swal.close();
+      if (res.status === "success") onSuccess(res);
+      else Swal.fire('錯誤', res.message, 'error'); 
+    })
+    .catch(err => {
+      if (retries > 0) {
+        console.log(`連線失敗，自動重試... 剩餘次數 ${retries}`);
+        setTimeout(() => callApi(payload, onSuccess, showLoading, retries - 1), 1500); 
+      } else {
+        if(showLoading) {
+          Swal.close();
+          Swal.fire({
+            icon: 'error',
+            title: '連線失敗',
+            text: '無法連線至伺服器，請確認網路訊號後重試或重新整理頁面。',
+            confirmButtonText: '我知道了'
+          });
+        } else {
+          Toast.fire({ icon: 'warning', title: '部分資料同步延遲，系統將自動重試' });
+          console.error('API 呼叫在所有重試後仍然失敗:', payload.action, err);
+        }
+      }
+    });
+  }
   
-  // 🔥 核心優化：連續輸入模式 (保留日期與工地)
   function handleSubmitWork(e) {
     e.preventDefault();
     const workerSelect = document.getElementById('worker');
@@ -409,13 +401,11 @@
       count: count, bento: document.getElementById('bento').value, otA: otA, otB: otB
     };
 
-    // 樂觀 UI
     const list = document.getElementById('historyList');
     const tempId = 'temp-' + new Date().getTime(); 
     const dateObj = new Date(dateVal);
     const dateStr = (dateObj.getMonth()+1) + '/' + dateObj.getDate();
     
-    // 移除 "載入中"
     const emptyMsg = list.querySelector('.text-muted');
     if(emptyMsg) emptyMsg.remove();
 
@@ -434,7 +424,6 @@
     list.insertAdjacentHTML('afterbegin', tempHtml);
     Toast.fire({ icon: 'success', title: '已加入' });
 
-    // 只清空師傅相關，保留日期與工地
     document.getElementById('worker').value = ""; 
     document.getElementById('count').value = "1"; 
     document.getElementById('bento').value = "";
@@ -442,12 +431,10 @@
     document.getElementById('otB').value = "";
 
     callApi({ action: "submitForm", formData: formData }, (res) => {
-       // 背景偷偷刷新，將暫存轉為正式 ID
        loadHistory(true); 
     }, false);
   }
 
-  // 🔥 核心優化：刪除防手抖 (Anti-Misclick)
   function deleteItem(action, rowIndex, elementId, desc) {
     Swal.fire({
       title: '確定刪除？',
@@ -455,18 +442,18 @@
       icon: 'warning',
       showCancelButton: true, confirmButtonText: '確認刪除', cancelButtonText: '取消',
       confirmButtonColor: '#dc3545', cancelButtonColor: '#6c757d',
-      focusCancel: true // 預設聚焦在取消，防止連點
+      focusCancel: true
     }).then((result) => {
       if (result.isConfirmed) {
         const row = document.getElementById(elementId);
         if(row) {
-            row.classList.add('deleting'); // 變灰並鎖定
+            row.classList.add('deleting');
         }
         callApi({ action: action, userId: document.getElementById('userId').value, rowIndex: rowIndex }, (res) => { 
             if(row) row.remove();
-            loadReport(); 
-            loadHistory(); // 加入這行：強制重新抓取點工紀錄，更新 rowIndex
-            loadAdvanceHistory(); // 加入這行：強制重新抓取帳務紀錄
+            loadReport(true); 
+            loadHistory(true);
+            loadAdvanceHistory(true);
         }, false);
       }
     });
@@ -474,39 +461,110 @@
 
   function loadHistory(silent = false) {
     const list = document.getElementById('historyList');
-    if(!silent) list.innerHTML = '<li class="list-group-item text-center text-muted">載入中...</li>';
+    const cacheKey = 'histCache_' + document.getElementById('userId').value;
+    const cachedHtml = localStorage.getItem(cacheKey);
+
+    if (!silent && !cachedHtml) {
+        list.innerHTML = '<li class="list-group-item text-center text-muted">載入中...</li>';
+    } else if (cachedHtml) {
+        list.innerHTML = cachedHtml;
+    }
     
     fetch(GAS_API_URL, { method: "POST", body: JSON.stringify({ action: "getHistory", userId: document.getElementById('userId').value }) })
     .then(res => res.json())
     .then(res => {
       if (res.status === "success") {
-        list.innerHTML = "";
-        if (!res.data || res.data.length === 0) { list.innerHTML = '<li class="list-group-item text-center text-muted">今日尚無資料</li>'; return; }
-        res.data.forEach((item) => {
-          const uniqueId = `hist-${item.rowIndex}`; 
-          const desc = `<strong>${item.worker}</strong><br>${item.date} @ ${item.site} (${item.count}工)`;
-          list.innerHTML += `
-            <li class="list-group-item d-flex justify-content-between align-items-center" id="${uniqueId}">
-              <div><span class="badge bg-dark me-1">${item.date}</span><span class="fw-bold">${item.worker}</span><small class="text-muted d-block">${item.site}</small></div>
-              <div class="text-end"><span class="badge bg-secondary rounded-pill">${item.count}工</span>
-              <button class="btn btn-sm btn-outline-danger ms-2" onclick="deleteItem('deleteRecord', ${item.rowIndex}, '${uniqueId}', '${desc}')"><i class="bi bi-trash"></i> 刪除</button></div>
-            </li>`;
-        });
+        let newHtml = "";
+        if (!res.data || res.data.length === 0) { 
+            newHtml = '<li class="list-group-item text-center text-muted">今日尚無資料</li>'; 
+        } else {
+            res.data.forEach((item) => {
+              const uniqueId = `hist-${item.rowIndex}`; 
+              const desc = `<strong>${item.worker}</strong><br>${item.date} @ ${item.site} (${item.count}工)`;
+              newHtml += `
+                <li class="list-group-item d-flex justify-content-between align-items-center" id="${uniqueId}">
+                  <div><span class="badge bg-dark me-1">${item.date}</span><span class="fw-bold">${item.worker}</span><small class="text-muted d-block">${item.site}</small></div>
+                  <div class="text-end"><span class="badge bg-secondary rounded-pill">${item.count}工</span>
+                  <button class="btn btn-sm btn-outline-danger ms-2" onclick="deleteItem('deleteRecord', ${item.rowIndex}, '${uniqueId}', '${desc}')"><i class="bi bi-trash"></i> 刪除</button></div>
+                </li>`;
+            });
+        }
+        list.innerHTML = newHtml;
+        localStorage.setItem(cacheKey, newHtml);
       }
     });
   }
 
-  // 其他函式維持標準化
-  function handleSubmitAdvance(e) { e.preventDefault(); const isDebt = document.getElementById('typeDebt').checked; let amount = Number(document.getElementById('advAmount').value); if (!isDebt) amount = -amount; const formData = { userId: document.getElementById('userId').value, worker: document.getElementById('advWorker').value, date: document.getElementById('advDate').value, amount: amount, note: document.getElementById('advNote').value }; callApi({ action: "submitAdvance", formData: formData }, (res) => { Swal.fire({icon: 'success', title: '帳務已紀錄', timer: 1500, showConfirmButton: false}); document.getElementById('advAmount').value = ""; document.getElementById('advNote').value = ""; refreshAll(); }, true); }
-  function loadAdvanceHistory() { callApi({ action: "getAdvanceHistory", userId: document.getElementById('userId').value }, (res) => { const list = document.getElementById('advanceList'); list.innerHTML = ""; if (!res.data || res.data.length === 0) { list.innerHTML = '<li class="list-group-item text-center text-muted">尚無資料</li>'; return; } res.data.forEach((item) => { const uniqueId = `adv-${item.rowIndex}`; let colorClass = item.amount > 0 ? "text-danger" : "text-success"; let displayAmount = item.amount > 0 ? `-${fmt(item.amount)}` : `+${fmt(Math.abs(item.amount))}`; const desc = `${item.date} ${item.worker} $${item.amount}`; list.innerHTML += `<li class="list-group-item d-flex justify-content-between align-items-center" id="${uniqueId}"><div><span class="badge bg-light text-dark border me-1">${item.date}</span><span class="fw-bold ${colorClass}">${item.worker}</span><small class="text-muted d-block">${item.note}</small></div><div class="text-end"><span class="${colorClass} fw-bold money-text">${displayAmount}</span><button class="btn btn-sm btn-outline-danger ms-2" onclick="deleteItem('deleteAdvance', ${item.rowIndex}, '${uniqueId}', '${desc}')"><i class="bi bi-trash"></i></button></div></li>`; }); }, false); }
+  function handleSubmitAdvance(e) { e.preventDefault(); const isDebt = document.getElementById('typeDebt').checked; let amount = Number(document.getElementById('advAmount').value); if (!isDebt) amount = -amount; const formData = { userId: document.getElementById('userId').value, worker: document.getElementById('advWorker').value, date: document.getElementById('advDate').value, amount: amount, note: document.getElementById('advNote').value }; callApi({ action: "submitAdvance", formData: formData }, (res) => { Swal.fire({icon: 'success', title: '帳務已紀錄', timer: 1500, showConfirmButton: false}); document.getElementById('advAmount').value = ""; document.getElementById('advNote').value = ""; refreshAll(true); }, true); }
+  
+  function loadAdvanceHistory(silent = false) { 
+    const list = document.getElementById('advanceList');
+    const cacheKey = 'advCache_' + document.getElementById('userId').value;
+    const cachedHtml = localStorage.getItem(cacheKey);
+
+    if (!silent && !cachedHtml) {
+        list.innerHTML = '<li class="list-group-item text-center text-muted">載入中...</li>';
+    } else if (cachedHtml) {
+        list.innerHTML = cachedHtml;
+    }
+
+    callApi({ action: "getAdvanceHistory", userId: document.getElementById('userId').value }, (res) => { 
+        let newHtml = "";
+        if (!res.data || res.data.length === 0) { 
+            newHtml = '<li class="list-group-item text-center text-muted">尚無資料</li>'; 
+        } else {
+            res.data.forEach((item) => { 
+                const uniqueId = `adv-${item.rowIndex}`; 
+                let colorClass = item.amount > 0 ? "text-danger" : "text-success"; 
+                let displayAmount = item.amount > 0 ? `-${fmt(item.amount)}` : `+${fmt(Math.abs(item.amount))}`; 
+                const desc = `${item.date} ${item.worker} $${item.amount}`; 
+                newHtml += `<li class="list-group-item d-flex justify-content-between align-items-center" id="${uniqueId}"><div><span class="badge bg-light text-dark border me-1">${item.date}</span><span class="fw-bold ${colorClass}">${item.worker}</span><small class="text-muted d-block">${item.note}</small></div><div class="text-end"><span class="${colorClass} fw-bold money-text">${displayAmount}</span><button class="btn btn-sm btn-outline-danger ms-2" onclick="deleteItem('deleteAdvance', ${item.rowIndex}, '${uniqueId}', '${desc}')"><i class="bi bi-trash"></i></button></div></li>`; 
+            });
+        }
+        list.innerHTML = newHtml;
+        localStorage.setItem(cacheKey, newHtml);
+    }, false); 
+  }
+
   function handleRegister(e) { e.preventDefault(); const name = document.getElementById('regUserName').value; const company = document.getElementById('regCompanyName').value; const userId = document.getElementById('userId').value; Swal.fire({ title: '綁定中...', text: '正在尋找資料庫', allowOutsideClick: false, didOpen: () => Swal.showLoading() }); fetch(GAS_API_URL, { method: "POST", body: JSON.stringify({ action: "registerUser", userId: userId, userName: name, companyName: company }) }).then(res => res.json()).then(res => { if (res.status === "success") { Swal.fire('成功', '綁定完成', 'success').then(() => location.reload()); } else { Swal.fire('綁定失敗', res.message, 'error'); } }); }
   function loadSettingsList() { const list = document.getElementById('settingsList'); list.innerHTML = '<li class="list-group-item text-center text-muted">載入中...</li>'; callApi({ action: "getSettingsList", userId: document.getElementById('userId').value }, (res) => { list.innerHTML = ""; list.innerHTML += `<li class="list-group-item bg-light fw-bold small">師傅名單</li>`; res.data.workers.forEach(w => list.innerHTML += `<li class="list-group-item d-flex justify-content-between"><span>${w.name} ($${w.salary})</span><button class="btn btn-sm btn-outline-secondary" onclick="deleteSetting('worker', ${w.rowIndex})">移除</button></li>`); list.innerHTML += `<li class="list-group-item bg-light fw-bold small mt-2">工地名單</li>`; res.data.sites.forEach(s => list.innerHTML += `<li class="list-group-item d-flex justify-content-between"><span>${s.name}</span><button class="btn btn-sm btn-outline-secondary" onclick="deleteSetting('site', ${s.rowIndex})">移除</button></li>`); }, false); }
   function handleAddWorker(e) { e.preventDefault(); const name = document.getElementById('newWorkerName').value; const salary = document.getElementById('newWorkerSalary').value; callApi({ action: "addSetting", formData: { userId: document.getElementById('userId').value, type: 'worker', name: name, salary: salary } }, (res) => { Swal.fire('成功', '師傅已新增', 'success'); document.getElementById('newWorkerName').value = ""; document.getElementById('newWorkerSalary').value = ""; loadSettingsList(); localStorage.removeItem('initData_' + document.getElementById('userId').value); }, true); }
   function handleAddSite(e) { e.preventDefault(); const name = document.getElementById('newSiteName').value; const hasMeal = document.getElementById('newSiteMeal').value; const price = document.getElementById('newSitePrice').value; callApi({ action: "addSetting", formData: { userId: document.getElementById('userId').value, type: 'site', name: name, hasMeal: hasMeal, mealPrice: price } }, (res) => { Swal.fire('成功', '工地已新增', 'success'); document.getElementById('newSiteName').value = ""; loadSettingsList(); localStorage.removeItem('initData_' + document.getElementById('userId').value); }, true); }
   function deleteSetting(type, rowIndex) { Swal.fire({ title: '確定移除？', icon: 'warning', showCancelButton: true }).then((r) => { if(r.isConfirmed) { callApi({ action: "deleteSetting", userId: document.getElementById('userId').value, type: type, rowIndex: rowIndex }, () => { Swal.fire('已移除', '', 'success'); loadSettingsList(); localStorage.removeItem('initData_' + document.getElementById('userId').value); }, true); } }); }
-  function loadReport() { const userId = document.getElementById('userId').value; const picker = document.getElementById('reportMonthPicker'); const container = document.getElementById('reportContainer'); if(!picker.value) picker.value = new Date().toISOString().slice(0, 7); callApi({ action: "getMonthlyReport", userId: userId, month: picker.value }, (res) => { container.innerHTML = ""; if (!res.data || res.data.length === 0) { container.innerHTML = '<div class="p-3 text-center text-muted">本月尚無資料</div>'; return; } res.data.forEach((w, index) => { let siteStr = Object.entries(w.sites).map(([site, days]) => `${site}: ${days}天`).join(' / '); if(!siteStr) siteStr = "--"; let advDisplay = w.advances > 0 ? `<span class="text-danger">-$${fmt(w.advances)}</span>` : (w.advances < 0 ? `<span class="text-success">+$${fmt(Math.abs(w.advances))}</span>` : `<span>$0</span>`); container.innerHTML += `<div class="accordion-item"><h2 class="accordion-header" id="heading${index}"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse${index}"><div class="d-flex w-100 justify-content-between me-2"><span class="fw-bold text-dark">${w.name}</span><span class="money-text text-primary">$${fmt(w.netPay)}</span></div></button></h2><div id="collapse${index}" class="accordion-collapse collapse" data-bs-parent="#reportContainer"><div class="accordion-body bg-light"><ul class="list-unstyled mb-0" style="font-size: 14px;"><li class="mb-2"><strong>工地分佈：</strong><br>${siteStr}</li><li class="d-flex justify-content-between"><span>正常工數：</span><span>${w.totalDays} 工</span></li><li class="d-flex justify-content-between"><span>加班時數：</span><span>A:${w.totalOtA} / B:${w.totalOtB}</span></li><li class="d-flex justify-content-between text-secondary"><span>應付報酬：</span><span>$${fmt(w.grossPay)}</span></li><li class="d-flex justify-content-between border-bottom pb-2 mb-2"><span>帳務調整：</span>${advDisplay}</li><li class="d-flex justify-content-between fw-bold fs-5 text-dark"><span>實付金額：</span><span>$${fmt(w.netPay)}</span></li></ul></div></div></div>`; }); }, false); }
+  
+  function loadReport(silent = false) { 
+    const userId = document.getElementById('userId').value; 
+    const picker = document.getElementById('reportMonthPicker'); 
+    const container = document.getElementById('reportContainer'); 
+    if(!picker.value) picker.value = new Date().toISOString().slice(0, 7); 
+    
+    const cacheKey = 'reportCache_' + userId + '_' + picker.value;
+    const cachedHtml = localStorage.getItem(cacheKey);
+
+    if (!silent && !cachedHtml) {
+        container.innerHTML = '<div class="p-4 text-center text-muted">載入中...</div>';
+    } else if (cachedHtml) {
+        container.innerHTML = cachedHtml;
+    }
+
+    callApi({ action: "getMonthlyReport", userId: userId, month: picker.value }, (res) => { 
+        let newHtml = "";
+        if (!res.data || res.data.length === 0) { 
+            newHtml = '<div class="p-3 text-center text-muted">本月尚無資料</div>'; 
+        } else {
+            res.data.forEach((w, index) => { 
+                let siteStr = Object.entries(w.sites || {}).map(([site, days]) => `${site}: ${days}天`).join(' / '); 
+                if(!siteStr) siteStr = "--"; 
+                let advDisplay = w.advances > 0 ? `<span class="text-danger">-$${fmt(w.advances)}</span>` : (w.advances < 0 ? `<span class="text-success">+$${fmt(Math.abs(w.advances))}</span>` : `<span>$0</span>`); 
+                newHtml += `<div class="accordion-item"><h2 class="accordion-header" id="heading${index}"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse${index}"><div class="d-flex w-100 justify-content-between me-2"><span class="fw-bold text-dark">${w.name}</span><span class="money-text text-primary">$${fmt(w.netPay)}</span></div></button></h2><div id="collapse${index}" class="accordion-collapse collapse" data-bs-parent="#reportContainer"><div class="accordion-body bg-light"><ul class="list-unstyled mb-0" style="font-size: 14px;"><li class="mb-2"><strong>工地分佈：</strong><br>${siteStr}</li><li class="d-flex justify-content-between"><span>正常工數：</span><span>${w.totalDays} 工</span></li><li class="d-flex justify-content-between"><span>加班時數：</span><span>A:${w.totalOtA} / B:${w.totalOtB}</span></li><li class="d-flex justify-content-between text-secondary"><span>應付報酬：</span><span>$${fmt(w.grossPay)}</span></li><li class="d-flex justify-content-between border-bottom pb-2 mb-2"><span>帳務調整：</span>${advDisplay}</li><li class="d-flex justify-content-between fw-bold fs-5 text-dark"><span>實付金額：</span><span>$${fmt(w.netPay)}</span></li></ul></div></div></div>`; 
+            }); 
+        }
+        container.innerHTML = newHtml;
+        localStorage.setItem(cacheKey, newHtml);
+    }, false); 
+  }
+
   function fmt(num) { return new Intl.NumberFormat('zh-TW').format(num); }
-  function updateSelect(id, items) { const sel = document.getElementById(id); sel.innerHTML = '<option value="" disabled selected>請選擇</option>'; items.forEach(i => sel.add(new Option(i, i))); }
   function updateAdvHint() { const isDebt = document.getElementById('typeDebt').checked; const hint = document.getElementById('advHint'); const btn = document.getElementById('btnAdv'); if (isDebt) { hint.innerText = "從本月薪資扣除"; hint.className = "form-text text-danger mt-1 fw-bold"; btn.className = "btn btn-secondary w-100 shadow-sm"; btn.innerText = "確認預支 (扣款)"; } else { hint.innerText = "補貼給師傅 (代墊款等)"; hint.className = "form-text text-success mt-1 fw-bold"; btn.className = "btn btn-secondary w-100 shadow-sm"; btn.innerText = "確認請款 (給付)"; } }
 </script>
 </body>
